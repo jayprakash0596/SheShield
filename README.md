@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # SheShield (शीशील्ड) 🛡️
 ### Full-Stack Women's Safety, Legal Rights & Emergency Support Platform (India)
 
@@ -228,3 +229,6 @@ SheShield uses standard **OpenStreetMap (OSM)** tiles via Leaflet without requir
 
 ## 📄 License & Disclaimer
 SheShield is provided for informational and emergency educational purposes. For immediate physical threats or emergencies, users must always contact official state authorities by dialing **112**.
+=======
+# SheShield
+>>>>>>> 7e0a2e8b7d22e4e66568a51a0b2a9e2f36b83dbd
