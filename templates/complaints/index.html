@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}Complaint Draft & Portal Navigation — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <!-- Hero Header -->
+  <div style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%); color: #fff; padding: 36px 28px; border-radius: var(--radius-lg); margin-bottom: 28px;">
+    <span class="badge badge-purple" style="background: rgba(255,255,255,0.2); color: #fff; margin-bottom: 12px;">
+      ✍️ Step-by-Step Incident Documentation
+    </span>
+    <h1 style="font-size: 2.1rem; font-weight: 800; margin-bottom: 10px;">
+      Complaint Draft Assistant & Official Portal Navigation
+    </h1>
+    <p style="font-size: 1.05rem; color: #cbd5e1; line-height: 1.6; max-width: 760px; margin-bottom: 24px;">
+      Drafting a clear, fact-based complaint is the first crucial step toward justice. SheShield organizes your statement of facts, gives you full editing control, provides immediate TXT & PDF downloads, and guides you to the right government portal.
+    </p>
+
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('complaints.new') }}" class="btn btn-primary btn-lg" style="background: var(--color-purple); font-weight: 700;">
+        + Start New Complaint Draft
+      </a>
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('complaints.my_drafts') }}" class="btn btn-outline btn-lg" style="color: #fff; border-color: rgba(255,255,255,0.4);">
+          My Saved Drafts ({{ user_drafts_count }}) &rarr;
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Prominent Mandatory Disclaimer -->
+  <div class="card" style="border-left: 6px solid var(--color-purple); background: #faf5ff;">
+    <h2 style="font-size: 1.15rem; color: var(--color-purple-hover); margin-bottom: 6px;">
+      ⚠️ Important Legal & Administrative Notice
+    </h2>
+    <p style="color: #4c1d95; font-size: 0.95rem; line-height: 1.6; margin: 0;">
+      Preparing or saving a draft inside SheShield <strong>is not equivalent to filing a formal complaint or FIR with a government authority</strong>. SheShield assists you in organizing your narrative clearly for your own records. You must submit your finalized document directly to statutory bodies (like NCW, SHe-Box, or Police) as guided in Step 7.
+    </p>
+  </div>
+
+  <!-- The 7-Step Workflow Explanation -->
+  <div class="card">
+    <h2 class="card-title" style="margin-bottom: 20px;">The SheShield 7-Step Complaint Workflow</h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+      
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">1. Select Category</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Choose from Domestic Violence, POSH, Cybercrime, Dowry, Stalking, and more.
+        </p>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">2. Guided Safe Form</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Fill only the details you feel safe providing. Sensitive fields remain optional.
+        </p>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">3. Automated Structure</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Generates formal recipient headers, timeline breakdowns, and relief statements without inventing facts.
+        </p>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">4. Edit & Refine</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Review the generated text. Edit any line, dates, or names with full author control.
+        </p>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">5. Download TXT / PDF</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Download to your phone or computer for physical printing, emailing, or legal counsel review.
+        </p>
+      </div>
+
+      <div style="padding: 16px; background: var(--bg-main); border-radius: var(--radius-md);">
+        <strong style="color: var(--color-primary-navy); display: block; margin-bottom: 4px;">6. Official Routing</strong>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Understand which statutory authority handles your issue before leaving SheShield.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Category to Official Authority Routing Matrix -->
+  <div class="card">
+    <h2 class="card-title" style="margin-bottom: 16px;">Where Your Draft Gets Routed (Official Portals)</h2>
+    <div style="overflow-x: auto;">
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+        <thead>
+          <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+            <th style="padding: 10px;">Issue Category</th>
+            <th style="padding: 10px;">Primary Official Authority</th>
+            <th style="padding: 10px;">Official Portal Domain</th>
+            <th style="padding: 10px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px; font-weight: 600;">Workplace Harassment (POSH)</td>
+            <td style="padding: 10px;">Internal Committee (IC) & SHe-Box</td>
+            <td style="padding: 10px;"><code>shebox.wcd.gov.in</code></td>
+            <td style="padding: 10px;"><a href="{{ url_for('complaints.new', category='WORKPLACE_POSH') }}" class="btn btn-outline btn-sm">Draft</a></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px; font-weight: 600;">Cyber Harassment / Blackmail</td>
+            <td style="padding: 10px;">National Cyber Crime Reporting Portal</td>
+            <td style="padding: 10px;"><code>cybercrime.gov.in</code></td>
+            <td style="padding: 10px;"><a href="{{ url_for('complaints.new', category='CYBERCRIME') }}" class="btn btn-outline btn-sm">Draft</a></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px; font-weight: 600;">Domestic Violence / Dowry</td>
+            <td style="padding: 10px;">National Commission for Women (NCW)</td>
+            <td style="padding: 10px;"><code>ncwapps.nic.in</code></td>
+            <td style="padding: 10px;"><a href="{{ url_for('complaints.new', category='DOMESTIC_VIOLENCE') }}" class="btn btn-outline btn-sm">Draft</a></td>
+          </tr>
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 10px; font-weight: 600;">Free Legal Aid / Property</td>
+            <td style="padding: 10px;">National Legal Services Authority (NALSA)</td>
+            <td style="padding: 10px;"><code>nalsa.gov.in</code></td>
+            <td style="padding: 10px;"><a href="{{ url_for('complaints.new', category='PROPERTY_RIGHTS') }}" class="btn btn-outline btn-sm">Draft</a></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

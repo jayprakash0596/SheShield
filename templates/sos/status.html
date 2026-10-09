@@ -1,0 +1,534 @@
+{% extends "base.html" %}
+{% block title %}Emergency Event #{{ event.token[:8] }} — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <!-- Header Banner with Status Badge -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">
+        Emergency Event Monitoring
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Event Token: <code>{{ event.token }}</code> • Created: {{ event.created_at.strftime('%d %b %Y, %I:%M:%S %p UTC') }}
+      </p>
+    </div>
+    <div>
+      {% if event.status == 'ACTIVE' %}
+        <span class="badge badge-red" style="font-size: 1rem; padding: 8px 16px; animation: pulse-subtle 2s infinite;">
+          🚨 STATUS: ACTIVE
+        </span>
+      {% elif event.status == 'RESOLVED' %}
+        <span class="badge" style="background: var(--color-success-light); color: var(--color-success); font-size: 1rem; padding: 8px 16px;">
+          ✅ STATUS: RESOLVED
+        </span>
+      {% else %}
+        <span class="badge badge-neutral" style="font-size: 1rem; padding: 8px 16px;">
+          ⛔ STATUS: CANCELLED
+        </span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Shareable Live Tracking Link for Family & Friends -->
+  <div class="card" style="border: 2px solid var(--color-purple); background: #fdf4ff; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h3 style="font-size: 1.05rem; color: #581c87; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+          🔗 Trusted Contact Tracking & Evidence Link
+        </h3>
+        <p style="font-size: 0.88rem; color: #701a75; margin: 0;">
+          This secure link is included in emergency SMS. Anyone with this link can monitor your live GPS and hear/see emergency evidence without logging in.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px; align-items: center; width: 100%; max-width: 500px;">
+        <input type="text" id="shareableLinkInput" readonly value="{{ url_for('sos.track', token=event.token, _external=True) }}" class="form-control" style="font-size: 0.85rem; background: #fff;">
+        <button type="button" id="copyShareLinkBtn" class="btn btn-purple btn-sm" style="white-space: nowrap; font-weight: 600;">📋 Copy Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Immediate Danger Card -->
+  <div class="card" style="border-left: 6px solid var(--color-sos-red); background: #fef2f2;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="color: #991b1b; font-size: 1.15rem; margin-bottom: 4px;">Direct Emergency Services</h2>
+        <p style="color: #7f1d1d; font-size: 0.9rem;">
+          If an attacker is present or medical aid is urgent, connect with first responders immediately.
+        </p>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <a href="tel:112" class="btn btn-danger" style="font-weight: 700;">📞 Call 112</a>
+        <a href="tel:1091" class="btn btn-outline" style="background: #fff; color: #991b1b; border-color: #fca5a5;">📞 Call 1091</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location Information -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">📍 Location Tracking & Breadcrumbs</h2>
+      {% if event.status == 'ACTIVE' %}
+        <button id="updateLocBtn" type="button" class="btn btn-teal btn-sm">
+          📡 Send Updated GPS Ping
+        </button>
+      {% endif %}
+    </div>
+
+    {% if event.latitude and event.longitude %}
+      <div style="background: var(--bg-main); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div>
+            <strong>Latest Coordinates:</strong>
+            <code>{{ "%.5f"|format(event.latitude) }}, {{ "%.5f"|format(event.longitude) }}</code>
+            {% if event.accuracy %}
+              <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 8px;">(Accuracy: ±{{ event.accuracy|round }}m)</span>
+            {% endif %}
+          </div>
+          <a href="https://maps.google.com/?q={{ event.latitude }},{{ event.longitude }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm">
+            View on Map ↗
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div style="background: var(--color-warning-light); color: #78350f; padding: 14px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid #fde68a;">
+        ⚠️ GPS coordinates were not provided or permission was denied.
+      </div>
+    {% endif %}
+
+    <!-- Manual Location Submission for limited connectivity / indoors -->
+    {% if event.status == 'ACTIVE' %}
+      <div style="border-top: 1px solid var(--border-color); padding-top: 16px; margin-top: 16px;">
+        <h3 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--color-primary-navy);">Manual Location / Landmark Update</h3>
+        <form id="manualLocForm" style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <input type="text" id="manualAddressInput" class="form-control" placeholder="e.g. Near Metro Station Gate 2, MG Road" style="flex: 1; min-width: 240px;">
+          <button type="button" id="saveManualLocBtn" class="btn btn-outline btn-sm">Save Note</button>
+        </form>
+      </div>
+    {% endif %}
+
+    <!-- Breadcrumb History -->
+    {% if updates %}
+      <h3 style="font-size: 0.95rem; margin-top: 20px; margin-bottom: 10px; color: var(--color-primary-navy);">Recorded Location Pings ({{ updates|length }})</h3>
+      <ul style="list-style: none; font-size: 0.85rem; color: var(--text-muted);">
+        {% for u in updates %}
+          <li style="padding: 6px 0; border-bottom: 1px dashed var(--border-color);">
+            ⏱ {{ u.recorded_at.strftime('%I:%M:%S %p') }} — Lat: {{ "%.5f"|format(u.latitude) }}, Lng: {{ "%.5f"|format(u.longitude) }} (±{{ u.accuracy|round if u.accuracy else 'N/A' }}m)
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <!-- Notification Attempts Breakdown -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h2 class="card-title" style="margin: 0;">📢 Emergency Alerts & Contact Log</h2>
+        <span class="badge badge-purple">Mode: {{ sms_provider|upper }}</span>
+      </div>
+      {% if event.status == 'ACTIVE' %}
+        <form method="POST" action="{{ url_for('sos.resend_alert', token=event.token) }}" style="margin: 0;">
+          <button type="submit" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
+            📨 Resend SMS Alert
+          </button>
+        </form>
+      {% endif %}
+    </div>
+
+    {% if notifications %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 8px;">Contact</th>
+              <th style="padding: 8px;">Phone</th>
+              <th style="padding: 8px;">Channel</th>
+              <th style="padding: 8px;">Status</th>
+              <th style="padding: 8px;">Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in notifications %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 10px 8px; font-weight: 600;">{{ n.contact_name }}</td>
+                <td style="padding: 10px 8px;">{{ n.contact_phone }}</td>
+                <td style="padding: 10px 8px;"><span class="badge badge-neutral">{{ n.channel }}</span></td>
+                <td style="padding: 10px 8px;">
+                  {% if n.status == 'DELIVERED' or n.status == 'MOCK_SENT' %}
+                    <span class="badge" style="background: #dcfce7; color: #166534;">{{ n.status }}</span>
+                  {% elif n.status == 'ATTEMPTED' %}
+                    <span class="badge badge-teal">{{ n.status }}</span>
+                  {% else %}
+                    <span class="badge badge-red">{{ n.status }}</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 10px 8px; font-size: 0.8rem; color: var(--text-muted); max-width: 280px;">
+                  {{ n.provider_response or 'Pending update' }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9rem;">No notifications recorded for this session.</p>
+    {% endif %}
+  </div>
+
+  <!-- Emergency Media & Ambient Evidence Section -->
+  <div class="card" style="border-left: 5px solid var(--color-purple);">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <h2 class="card-title" style="margin: 0;">🎙️ Emergency Media & Ambient Evidence</h2>
+        <span class="badge badge-purple">EVIDENCE VAULT</span>
+      </div>
+      {% if event.status == 'ACTIVE' %}
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="recordAudioNowBtn" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
+            🎙️ Record 10s Voice Clip
+          </button>
+          <button type="button" id="snapPhotoNowBtn" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
+            📷 Capture Camera Snapshot
+          </button>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Live Recording / Upload Banner -->
+    <div id="evidenceStatusBanner" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 12px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;">
+      <span id="evidenceStatusIcon">🎙️</span> <span id="evidenceStatusText">Recording ambient surroundings...</span>
+    </div>
+
+    {% if evidences %}
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 10px;">
+        {% for ev in evidences %}
+          <div style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="badge {% if ev.evidence_type == 'AUDIO' %}badge-teal{% elif ev.evidence_type == 'IMAGE' %}badge-purple{% else %}badge-red{% endif %}">
+                {% if ev.evidence_type == 'AUDIO' %}🎙️ AMBIENT AUDIO{% elif ev.evidence_type == 'IMAGE' %}📷 CAMERA SNAPSHOT{% else %}🎥 VIDEO{% endif %}
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">
+                ⏱ {{ ev.created_at.strftime('%I:%M:%S %p') }}
+              </span>
+            </div>
+
+            {% if ev.evidence_type == 'AUDIO' %}
+              <div style="margin: 10px 0;">
+                <audio controls preload="metadata" style="width: 100%; height: 38px;">
+                  <source src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" type="audio/webm">
+                  <source src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" type="audio/ogg">
+                  Your browser does not support audio playback.
+                </audio>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>Duration: {{ ev.duration_seconds|round(1) if ev.duration_seconds else '8.0' }}s</span>
+                <a href="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" download="evidence_audio_{{ ev.id }}.webm" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+              </div>
+            {% elif ev.evidence_type == 'IMAGE' %}
+              <div style="margin: 10px 0; text-align: center; background: #000; border-radius: 6px; overflow: hidden; max-height: 240px;">
+                <img src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" alt="Emergency camera snapshot" style="max-width: 100%; max-height: 240px; object-fit: contain; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>Click image to expand</span>
+                <a href="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" download="evidence_snapshot_{{ ev.id }}.jpg" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 0.9rem;">
+        <span style="font-size: 1.8rem; display: block; margin-bottom: 6px;">🎙️</span>
+        No media evidence recorded yet for this session.
+        {% if event.status == 'ACTIVE' %}
+          <div style="margin-top: 8px;">
+            Click <strong>"Record 10s Voice Clip"</strong> or <strong>"Capture Camera Snapshot"</strong> above to record ambient sounds and visual surroundings.
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Resolution / Cancellation Flow -->
+  {% if event.status == 'ACTIVE' %}
+    <div class="card" style="border: 2px solid #e2e8f0;">
+      <h2 class="card-title" style="margin-bottom: 12px;">Resolve or Cancel This Event</h2>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">
+        When you are safe or if this was an accidental trigger, update the status here to prevent unnecessary panic.
+      </p>
+
+      <form method="POST" action="{{ url_for('sos.resolve', token=event.token) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="form-group">
+          <label for="notes" class="form-label">Resolution Notes / Reason (Optional)</label>
+          <textarea name="notes" id="notes" class="form-control" rows="2" placeholder="e.g. Reached home safely, or Test click by user..."></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+          <button type="submit" name="action" value="RESOLVED" class="btn btn-teal">
+            ✅ I Am Safe — Mark Resolved
+          </button>
+          <button type="submit" name="action" value="CANCELLED" class="btn btn-outline" style="color: var(--text-muted);">
+            ⛔ Cancel False Alarm
+          </button>
+        </div>
+      </form>
+    </div>
+  {% else %}
+    <div class="card" style="background: #f8fafc;">
+      <h3 style="font-size: 1.1rem; color: var(--color-primary-navy); margin-bottom: 6px;">Event Conclusion</h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        Resolved/Cancelled at: {{ event.resolved_at.strftime('%d %b %Y, %I:%M %p') if event.resolved_at else 'Recorded' }}
+      </p>
+      {% if event.resolution_notes %}
+        <p style="font-size: 0.9rem; color: #334155; margin-top: 6px;">
+          <strong>Notes:</strong> {{ event.resolution_notes }}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const updateLocBtn = document.getElementById("updateLocBtn");
+  if (updateLocBtn) {
+    updateLocBtn.addEventListener("click", () => {
+      updateLocBtn.disabled = true;
+      updateLocBtn.innerText = "Requesting GPS...";
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            fetch("{{ url_for('sos.update_location', token=event.token) }}", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrfToken()
+              },
+              body: JSON.stringify({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                accuracy: pos.coords.accuracy
+              })
+            })
+            .then(res => res.json())
+            .then(data => {
+              window.location.reload();
+            })
+            .catch(err => {
+              alert("Could not update location: " + err.message);
+              updateLocBtn.disabled = false;
+              updateLocBtn.innerText = "📡 Send Updated GPS Ping";
+            });
+          },
+          (err) => {
+            alert("Location error: " + err.message);
+            updateLocBtn.disabled = false;
+            updateLocBtn.innerText = "📡 Send Updated GPS Ping";
+          }
+        );
+      }
+    });
+  }
+
+  // Copy Shareable Tracker Link
+  const copyBtn = document.getElementById("copyShareLinkBtn");
+  const linkInput = document.getElementById("shareableLinkInput");
+  if (copyBtn && linkInput) {
+    copyBtn.addEventListener("click", () => {
+      linkInput.select();
+      navigator.clipboard.writeText(linkInput.value).then(() => {
+        copyBtn.innerText = "✅ Copied!";
+        setTimeout(() => copyBtn.innerText = "📋 Copy Link", 2000);
+      }).catch(() => {
+        document.execCommand("copy");
+        copyBtn.innerText = "✅ Copied!";
+        setTimeout(() => copyBtn.innerText = "📋 Copy Link", 2000);
+      });
+    });
+  }
+
+  // Evidence Capture Logic
+  const recordAudioBtn = document.getElementById("recordAudioNowBtn");
+  const snapPhotoBtn = document.getElementById("snapPhotoNowBtn");
+  const evidenceBanner = document.getElementById("evidenceStatusBanner");
+  const evidenceText = document.getElementById("evidenceStatusText");
+  const evidenceIcon = document.getElementById("evidenceStatusIcon");
+
+  function showEvidenceBanner(icon, text) {
+    if (evidenceBanner) {
+      evidenceBanner.style.display = "block";
+      evidenceIcon.innerText = icon;
+      evidenceText.innerText = text;
+    }
+  }
+
+  function hideEvidenceBanner() {
+    if (evidenceBanner) evidenceBanner.style.display = "none";
+  }
+
+  // Camera Snapshot function
+  async function performCameraSnapshot() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.warn("Camera API not supported on this device.");
+      return null;
+    }
+    showEvidenceBanner("📷", "Capturing camera snapshot for emergency evidence...");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      const video = document.createElement("video");
+      video.setAttribute("playsinline", "");
+      video.srcObject = stream;
+      await video.play();
+      await new Promise(r => setTimeout(r, 600));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Stop camera stream immediately
+      stream.getTracks().forEach(t => t.stop());
+
+      showEvidenceBanner("📤", "Uploading emergency camera snapshot...");
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.85));
+      if (!blob) {
+        hideEvidenceBanner();
+        return null;
+      }
+
+      const formData = new FormData();
+      formData.append("file", blob, "snapshot.jpg");
+      formData.append("type", "IMAGE");
+
+      const res = await fetch("{{ url_for('sos.upload_evidence', token=event.token) }}", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      return data;
+    } catch (err) {
+      console.warn("Camera snapshot error/denied:", err);
+      showEvidenceBanner("⚠️", "Camera permission unavailable or denied.");
+      setTimeout(hideEvidenceBanner, 2500);
+      return null;
+    }
+  }
+
+  // Audio Recording function
+  function performAudioRecording(seconds = 8) {
+    return new Promise(async (resolve) => {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.warn("Microphone API not supported on this device.");
+        return resolve(null);
+      }
+      showEvidenceBanner("🎙️", `Recording ambient surroundings (${seconds}s)...`);
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+
+        recorder.ondataavailable = (e) => {
+          if (e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          showEvidenceBanner("📤", "Uploading ambient audio evidence...");
+          const audioBlob = new Blob(chunks, { type: "audio/webm" });
+          const formData = new FormData();
+          formData.append("file", audioBlob, "ambient_voice.webm");
+          formData.append("type", "AUDIO");
+          formData.append("duration", seconds.toString());
+
+          try {
+            const res = await fetch("{{ url_for('sos.upload_evidence', token=event.token) }}", {
+              method: "POST",
+              body: formData
+            });
+            const data = await res.json();
+            resolve(data);
+          } catch (e) {
+            console.error(e);
+            hideEvidenceBanner();
+            resolve(null);
+          }
+        };
+
+        recorder.start();
+        let timeLeft = seconds;
+        const interval = setInterval(() => {
+          timeLeft--;
+          if (timeLeft > 0) {
+            showEvidenceBanner("🎙️", `Recording ambient surroundings (${timeLeft}s remaining)...`);
+          } else {
+            clearInterval(interval);
+          }
+        }, 1000);
+
+        setTimeout(() => {
+          if (recorder.state === "recording") {
+            recorder.stop();
+          }
+        }, seconds * 1000);
+
+      } catch (err) {
+        console.warn("Audio recording error/denied:", err);
+        showEvidenceBanner("⚠️", "Microphone permission unavailable or denied.");
+        setTimeout(hideEvidenceBanner, 2500);
+        resolve(null);
+      }
+    });
+  }
+
+  if (snapPhotoBtn) {
+    snapPhotoBtn.addEventListener("click", async () => {
+      snapPhotoBtn.disabled = true;
+      const res = await performCameraSnapshot();
+      if (res && res.success) {
+        window.location.reload();
+      } else {
+        snapPhotoBtn.disabled = false;
+      }
+    });
+  }
+
+  if (recordAudioBtn) {
+    recordAudioBtn.addEventListener("click", async () => {
+      recordAudioBtn.disabled = true;
+      const res = await performAudioRecording(10);
+      if (res && res.success) {
+        window.location.reload();
+      } else {
+        recordAudioBtn.disabled = false;
+      }
+    });
+  }
+
+  // Automatic evidence capture on initial SOS redirect
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get("auto_record") === "1" && "{{ event.status }}" === "ACTIVE") {
+    // Strip query param from address bar so page refresh won't loop
+    window.history.replaceState({}, document.title, window.location.pathname);
+
+    (async () => {
+      // Step 1: Capture camera snapshot
+      await performCameraSnapshot();
+      // Step 2: Record 8 seconds of ambient audio
+      await performAudioRecording(8);
+      // Step 3: Refresh to display new evidence player and images
+      window.location.reload();
+    })();
+  }
+});
+</script>
+{% endblock %}

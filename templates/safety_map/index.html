@@ -1,0 +1,706 @@
+{% extends "base.html" %}
+{% block title %}Community Safety Map & Safe Route Navigation — SheShield{% endblock %}
+
+{% block extra_head %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+  #map {
+    height: 560px;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    z-index: 1;
+  }
+  .report-popup {
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+  .report-popup strong {
+    color: var(--color-primary-navy);
+  }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .route-option-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .route-option-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  .checkpoint-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  /* Custom Map Pin Styling */
+  .custom-pin {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: bold;
+    font-size: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    border: 2px solid white;
+  }
+  .pin-origin { background: #10b981; }
+  .pin-dest { background: #ef4444; }
+  .pin-police { background: #1e3a8a; }
+  .pin-fuel { background: #f59e0b; }
+  .pin-hospital { background: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto;">
+  
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy); margin: 0;">Community Safety Map & Safe Route Navigation</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 4px;">
+        AI-assisted safe route recommendation, well-lit arterial highway corridors, and verified community hazards.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button id="locateMeBtn" type="button" class="btn btn-outline btn-sm">
+        📍 Find My Location
+      </button>
+      <button id="openReportModalBtn" type="button" class="btn btn-teal btn-sm">
+        ⚠️ Report Safety Concern
+      </button>
+    </div>
+  </div>
+
+  <!-- Honest Safety Data Notice -->
+  <div class="card" style="background: #fffbeb; border-left: 5px solid var(--color-warning); padding: 12px 18px; margin-bottom: 20px;">
+    <div style="display: flex; gap: 12px; align-items: flex-start;">
+      <span style="font-size: 1.3rem;">ℹ️</span>
+      <div style="font-size: 0.88rem; color: #78350f; line-height: 1.5;">
+        <strong>Safety Route Advisory:</strong> The <strong>Safe Route (सुरक्षित मार्ग)</strong> prioritizes well-lit National & State Highways with 24x7 police patrol booths, active commercial junctions, and emergency checkpoints over isolated shortcuts. In any urgent threat, dial <strong>112</strong> immediately.
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 360px 1fr; gap: 24px; margin-bottom: 24px;" class="map-grid-container">
+    
+    <!-- Left Sidebar: Route inputs & Category filter -->
+    <div>
+      <div class="card" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h2 style="font-size: 1.1rem; color: var(--color-primary-navy); margin: 0;">Route Discovery (मार्ग खोज)</h2>
+          <span class="badge badge-purple" style="font-size: 0.72rem;">Safe Routing Engine</span>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label class="form-label" style="font-size: 0.85rem; margin: 0;">Origin / Start Location</label>
+            <button type="button" id="useCurrentLocBtn" class="btn btn-outline" style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px;">
+              📍 My Location
+            </button>
+          </div>
+          <input type="text" id="routeStart" class="form-control" placeholder="e.g. COER University, Roorkee" style="font-size: 0.85rem;">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+          <label class="form-label" style="font-size: 0.85rem; margin-bottom: 4px;">Destination (गंतव्य स्थान)</label>
+          <input type="text" id="routeDest" class="form-control" placeholder="e.g. Modipuram, Meerut" style="font-size: 0.85rem;">
+        </div>
+
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="searchRouteBtn" class="btn btn-primary btn-sm" style="flex: 1; font-weight: 600;">
+            🔍 Find Safe & Best Routes
+          </button>
+          <button type="button" id="clearRouteBtn" class="btn btn-outline btn-sm" style="display: none;">
+            ✕ Clear
+          </button>
+        </div>
+
+        <div id="routeLoadingIndicator" style="display: none; text-align: center; padding: 12px 0; font-size: 0.85rem; color: var(--color-primary-navy);">
+          <span class="spinner" style="display: inline-block; width: 16px; height: 16px; border: 2px solid #cbd5e1; border-top-color: var(--color-primary-navy); border-radius: 50%; animation: spin 0.8s linear infinite; vertical-align: middle; margin-right: 6px;"></span>
+          Finding well-lit routes & police checkpoints...
+        </div>
+
+        <div id="routeStatusNotice" style="font-size: 0.82rem; margin-top: 10px; padding: 8px 10px; border-radius: 6px; display: none;"></div>
+
+        <!-- Route Comparison Selector (dynamically shown) -->
+        <div id="routeResultsContainer" style="display: none; margin-top: 16px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">
+            Select Preferred Route (मार्ग चुनें)
+          </div>
+
+          <!-- Safe Route Card (Recommended) -->
+          <div id="safeRouteCard" class="route-option-card" style="border: 2px solid #10b981; background: #f0fdf4; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <span style="display: inline-block; background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px;">
+                  🛡️ RECOMMENDED FOR WOMEN
+                </span>
+                <div style="font-weight: 700; color: #065f46; font-size: 0.92rem;">
+                  सुरक्षित मार्ग (Safe Highway Corridor)
+                </div>
+              </div>
+              <span id="safeRadioCheck" style="background: #10b981; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">✓</span>
+            </div>
+            
+            <div style="display: flex; gap: 14px; margin: 8px 0; font-size: 0.85rem; color: #1e293b;">
+              <div><strong>⏱ <span id="safeRouteDuration">--</span></strong></div>
+              <div>📏 <span id="safeRouteDistance">--</span></div>
+              <div style="color: #047857; font-weight: 600;">⭐ <span id="safeRouteScore">96%</span> Safety</div>
+            </div>
+
+            <div style="font-size: 0.76rem; color: #334155; line-height: 1.4; border-top: 1px dashed #bbf7d0; padding-top: 6px;">
+              <div>• 🛣️ <span id="safeRouteLighting">Well-lit National Highway (NH 334)</span></div>
+              <div>• 🚨 <strong>3 Verified Checkpoints</strong> (Police, 24/7 Fuel, Emergency Medical)</div>
+            </div>
+          </div>
+
+          <!-- Fastest / Direct Route Card -->
+          <div id="fastRouteCard" class="route-option-card" style="border: 1px solid var(--border-color); background: #ffffff; border-radius: 8px; padding: 10px 12px; margin-bottom: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div>
+                <span style="display: inline-block; background: #e0e7ff; color: #3730a3; font-size: 0.7rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-bottom: 4px;">
+                  ⚡ SHORTEST TIME
+                </span>
+                <div style="font-weight: 700; color: #1e293b; font-size: 0.92rem;">
+                  सबसे तेज़ मार्ग (Fastest Direct)
+                </div>
+              </div>
+              <span id="fastRadioCheck" style="display: none; background: #6366f1; color: white; border-radius: 50%; width: 22px; height: 22px; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">✓</span>
+            </div>
+
+            <div style="display: flex; gap: 14px; margin: 8px 0; font-size: 0.85rem; color: #1e293b;">
+              <div><strong>⏱ <span id="fastRouteDuration">--</span></strong></div>
+              <div>📏 <span id="fastRouteDistance">--</span></div>
+              <div style="color: #64748b; font-weight: 600;">⭐ <span id="fastRouteScore">76%</span> Moderate</div>
+            </div>
+
+            <div style="font-size: 0.76rem; color: #64748b; line-height: 1.4; border-top: 1px dashed var(--border-color); padding-top: 6px;">
+              • Direct route, may traverse narrower municipal bypasses
+            </div>
+          </div>
+
+          <!-- Route Actions -->
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <a id="openGoogleMapsBtn" href="#" target="_blank" rel="noreferrer" class="btn btn-outline btn-sm" style="flex: 1; font-size: 0.78rem; text-align: center; justify-content: center;">
+              🗺️ Open in Google Maps ↗
+            </a>
+            <a href="{{ url_for('sos.index') }}" class="btn btn-danger btn-sm" style="font-size: 0.78rem; padding: 6px 12px;">
+              🚨 SOS Ready
+            </a>
+          </div>
+
+          <!-- En-Route Safe Checkpoints List -->
+          <div id="checkpointsSection" style="margin-top: 14px; background: #f8fafc; border: 1px solid var(--border-color); border-radius: 6px; padding: 10px;">
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--color-primary-navy); margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+              <span>🛡️ Safe Checkpoints En-Route</span>
+              <span class="badge badge-teal" style="font-size: 0.68rem;" id="checkpointsCountBadge">3 Points</span>
+            </div>
+            <div id="checkpointsList" style="display: flex; flex-direction: column; gap: 6px; font-size: 0.78rem;">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Quick Helplines Sidebar -->
+      <div class="card">
+        <h3 style="font-size: 1rem; color: var(--color-primary-navy); margin-bottom: 10px;">Nearest Help Contacts</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+          Direct verified emergency services in India:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="tel:112" class="btn btn-danger btn-sm" style="justify-content: flex-start;">
+            🚨 Police Dispatch (112)
+          </a>
+          <a href="tel:1091" class="btn btn-outline btn-sm" style="justify-content: flex-start; color: #991b1b; border-color: #fca5a5;">
+            👩 Women Helpline (1091)
+          </a>
+          <a href="tel:181" class="btn btn-outline btn-sm" style="justify-content: flex-start;">
+            🤝 Women in Distress (181)
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side: Interactive Leaflet Map -->
+    <div>
+      <div class="card" style="padding: 12px;">
+        <div id="map"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <span style="width: 12px; height: 4px; background: #10b981; border-radius: 2px;"></span> 🛡️ Safe Route
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+              <span style="width: 12px; height: 4px; background: #6366f1; border-radius: 2px;"></span> ⚡ Fastest Route
+            </span>
+          </div>
+          <span>Map Tiles &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Safety Report Submission Modal -->
+  <div id="reportModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.7); z-index: 9999; align-items: center; justify-content: center; padding: 16px;">
+    <div class="card" style="max-width: 520px; width: 100%; margin: 0; max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 1.3rem; color: var(--color-primary-navy);">Submit Community Safety Report</h2>
+        <button type="button" id="closeReportModalBtn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 16px;">
+        Help other women by flagging infrastructural hazards like broken lights or isolated stretches. <em>Do not post private names or personal phone numbers.</em>
+      </p>
+
+      <form method="POST" action="{{ url_for('safety_map.submit_report') }}" id="reportForm">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          <label for="title" class="form-label">{{ form.title.label.text }} *</label>
+          {{ form.title(class="form-control", placeholder="e.g., Streetlights non-functional on North Lane") }}
+        </div>
+
+        <div class="form-group">
+          <label for="category" class="form-label">{{ form.category.label.text }} *</label>
+          {{ form.category(class="form-control") }}
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label for="latitude" class="form-label">Latitude *</label>
+            {{ form.latitude(class="form-control", id="reportLat") }}
+          </div>
+          <div class="form-group">
+            <label for="longitude" class="form-label">Longitude *</label>
+            {{ form.longitude(class="form-control", id="reportLng") }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="address" class="form-label">Landmark / Area Name</label>
+          {{ form.address(class="form-control", placeholder="e.g. Near Bus Stop #4") }}
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">{{ form.description.label.text }} *</label>
+          {{ form.description(class="form-control", rows="3", placeholder="Describe the safety hazard objectively...") }}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px;">
+          <button type="button" id="cancelReportBtn" class="btn btn-outline">Cancel</button>
+          <button type="submit" class="btn btn-teal">Submit for Moderation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const defaultLat = {{ default_lat }};
+  const defaultLng = {{ default_lng }};
+  
+  // 1. Initialize Leaflet Map
+  const map = L.map('map').setView([defaultLat, defaultLng], 12);
+
+  // 2. OpenStreetMap Tile Layer
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  // State variables for routing and location
+  let userMarker = null;
+  let detectedUserLat = null;
+  let detectedUserLng = null;
+  let currentRouteData = null;
+  let safePolyline = null;
+  let fastPolyline = null;
+  let routeMarkers = [];
+  let selectedRouteType = "safe"; // 'safe' or 'fastest'
+
+  // Custom Icon factory
+  function createCustomIcon(emoji, bgClass) {
+    return L.divIcon({
+      className: 'custom-leaflet-pin',
+      html: `<div class="custom-pin ${bgClass}">${emoji}</div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 32],
+      popupAnchor: [0, -30]
+    });
+  }
+
+  // 3. User Location Functionality
+  const locateMeBtn = document.getElementById("locateMeBtn");
+  const useCurrentLocBtn = document.getElementById("useCurrentLocBtn");
+  const routeStartInput = document.getElementById("routeStart");
+
+  function acquireUserLocation(onSuccess) {
+    if (!navigator.geolocation) {
+      alert("Geolocation is not supported by your browser.");
+      return;
+    }
+    locateMeBtn.disabled = true;
+    locateMeBtn.innerText = "Finding...";
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        detectedUserLat = pos.coords.latitude;
+        detectedUserLng = pos.coords.longitude;
+        map.setView([detectedUserLat, detectedUserLng], 14);
+
+        if (userMarker) {
+          userMarker.setLatLng([detectedUserLat, detectedUserLng]);
+        } else {
+          userMarker = L.marker([detectedUserLat, detectedUserLng], {
+            icon: createCustomIcon("📍", "pin-origin"),
+            title: "Your Location"
+          }).addTo(map).bindPopup("<strong>You are here (आपका वर्तमान स्थान)</strong>").openPopup();
+        }
+        locateMeBtn.disabled = false;
+        locateMeBtn.innerText = "📍 Find My Location";
+        if (onSuccess) onSuccess();
+      },
+      (err) => {
+        alert("Could not detect location: " + err.message);
+        locateMeBtn.disabled = false;
+        locateMeBtn.innerText = "📍 Find My Location";
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
+  }
+
+  locateMeBtn.addEventListener("click", () => acquireUserLocation());
+
+  useCurrentLocBtn.addEventListener("click", () => {
+    if (detectedUserLat && detectedUserLng) {
+      routeStartInput.value = "My Current Location";
+    } else {
+      acquireUserLocation(() => {
+        routeStartInput.value = "My Current Location";
+      });
+    }
+  });
+
+  // 4. Fetch and render approved community safety reports
+  fetch("{{ url_for('safety_map.api_reports') }}")
+    .then(res => res.json())
+    .then(reports => {
+      reports.forEach(r => {
+        const marker = L.circleMarker([r.latitude, r.longitude], {
+          radius: 8,
+          fillColor: r.status === 'PENDING' ? '#f59e0b' : '#ef4444',
+          color: '#ffffff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.8
+        }).addTo(map);
+
+        marker.bindPopup(`
+          <div class="report-popup">
+            <strong>⚠️ ${r.title}</strong><br>
+            <span style="font-size:0.8rem; color:#64748b;">${r.category.replace('_', ' ')} • ${r.created_at}</span><br>
+            <p style="margin-top:6px; font-size:0.85rem;">${r.description}</p>
+            ${r.status === 'PENDING' ? '<span style="color:#d97706; font-size:0.75rem;">(Under moderation)</span>' : ''}
+          </div>
+        `);
+      });
+    })
+    .catch(err => console.error("Error loading safety reports:", err));
+
+  // 5. Click on map to open report modal with pre-filled coordinates
+  const modal = document.getElementById("reportModal");
+  const openModalBtn = document.getElementById("openReportModalBtn");
+  const closeModalBtn = document.getElementById("closeReportModalBtn");
+  const cancelModalBtn = document.getElementById("cancelReportBtn");
+  const reportLatInput = document.getElementById("reportLat");
+  const reportLngInput = document.getElementById("reportLng");
+
+  map.on('click', (e) => {
+    reportLatInput.value = e.latlng.lat.toFixed(5);
+    reportLngInput.value = e.latlng.lng.toFixed(5);
+    modal.style.display = "flex";
+  });
+
+  openModalBtn.addEventListener("click", () => {
+    if (!reportLatInput.value) {
+      const center = map.getCenter();
+      reportLatInput.value = center.lat.toFixed(5);
+      reportLngInput.value = center.lng.toFixed(5);
+    }
+    modal.style.display = "flex";
+  });
+
+  closeModalBtn.addEventListener("click", () => modal.style.display = "none");
+  cancelModalBtn.addEventListener("click", () => modal.style.display = "none");
+
+  // 6. ROUTE PREVIEW & SAFE ROUTE ENGINE
+  const searchRouteBtn = document.getElementById("searchRouteBtn");
+  const clearRouteBtn = document.getElementById("clearRouteBtn");
+  const routeLoadingIndicator = document.getElementById("routeLoadingIndicator");
+  const routeStatusNotice = document.getElementById("routeStatusNotice");
+  const routeResultsContainer = document.getElementById("routeResultsContainer");
+  const routeDestInput = document.getElementById("routeDest");
+
+  const safeRouteCard = document.getElementById("safeRouteCard");
+  const fastRouteCard = document.getElementById("fastRouteCard");
+  const safeRadioCheck = document.getElementById("safeRadioCheck");
+  const fastRadioCheck = document.getElementById("fastRadioCheck");
+
+  const safeRouteDuration = document.getElementById("safeRouteDuration");
+  const safeRouteDistance = document.getElementById("safeRouteDistance");
+  const safeRouteScore = document.getElementById("safeRouteScore");
+  const safeRouteLighting = document.getElementById("safeRouteLighting");
+
+  const fastRouteDuration = document.getElementById("fastRouteDuration");
+  const fastRouteDistance = document.getElementById("fastRouteDistance");
+  const fastRouteScore = document.getElementById("fastRouteScore");
+
+  const openGoogleMapsBtn = document.getElementById("openGoogleMapsBtn");
+  const checkpointsList = document.getElementById("checkpointsList");
+  const checkpointsCountBadge = document.getElementById("checkpointsCountBadge");
+
+  function clearRouteMapLayers() {
+    if (safePolyline) { map.removeLayer(safePolyline); safePolyline = null; }
+    if (fastPolyline) { map.removeLayer(fastPolyline); fastPolyline = null; }
+    routeMarkers.forEach(m => map.removeLayer(m));
+    routeMarkers = [];
+  }
+
+  function displayRouteError(msg) {
+    routeLoadingIndicator.style.display = "none";
+    routeStatusNotice.style.display = "block";
+    routeStatusNotice.style.background = "#fef2f2";
+    routeStatusNotice.style.border = "1px solid #fecaca";
+    routeStatusNotice.style.color = "#991b1b";
+    routeStatusNotice.innerText = "⚠️ " + msg;
+  }
+
+  function updateActiveRouteSelection(type) {
+    selectedRouteType = type;
+    if (type === "safe") {
+      safeRouteCard.style.border = "2px solid #10b981";
+      safeRouteCard.style.background = "#f0fdf4";
+      safeRadioCheck.style.display = "flex";
+
+      fastRouteCard.style.border = "1px solid var(--border-color)";
+      fastRouteCard.style.background = "#ffffff";
+      fastRadioCheck.style.display = "none";
+
+      if (safePolyline) {
+        safePolyline.setStyle({ weight: 7, opacity: 1.0 });
+        safePolyline.bringToFront();
+      }
+      if (fastPolyline) {
+        fastPolyline.setStyle({ weight: 4, opacity: 0.45 });
+      }
+    } else {
+      fastRouteCard.style.border = "2px solid #6366f1";
+      fastRouteCard.style.background = "#eef2ff";
+      fastRadioCheck.style.display = "flex";
+
+      safeRouteCard.style.border = "1px solid var(--border-color)";
+      safeRouteCard.style.background = "#ffffff";
+      safeRadioCheck.style.display = "none";
+
+      if (fastPolyline) {
+        fastPolyline.setStyle({ weight: 7, opacity: 1.0 });
+        fastPolyline.bringToFront();
+      }
+      if (safePolyline) {
+        safePolyline.setStyle({ weight: 4, opacity: 0.45 });
+      }
+    }
+  }
+
+  safeRouteCard.addEventListener("click", () => updateActiveRouteSelection("safe"));
+  fastRouteCard.addEventListener("click", () => updateActiveRouteSelection("fastest"));
+
+  searchRouteBtn.addEventListener("click", async () => {
+    let startVal = routeStartInput.value.trim();
+    const destVal = routeDestInput.value.trim();
+
+    if (!destVal) {
+      displayRouteError("Please enter a destination (गंतव्य स्थान दर्ज करें).");
+      routeDestInput.focus();
+      return;
+    }
+
+    if (!startVal) {
+      if (detectedUserLat && detectedUserLng) {
+        startVal = "My Current Location";
+        routeStartInput.value = startVal;
+      } else {
+        displayRouteError("Please enter a starting location or click '📍 My Location'.");
+        routeStartInput.focus();
+        return;
+      }
+    }
+
+    // UI Loading state
+    routeStatusNotice.style.display = "none";
+    routeResultsContainer.style.display = "none";
+    routeLoadingIndicator.style.display = "block";
+    searchRouteBtn.disabled = true;
+
+    try {
+      const queryParams = new URLSearchParams({
+        start: startVal,
+        destination: destVal,
+        user_lat: detectedUserLat || '',
+        user_lng: detectedUserLng || ''
+      });
+      const response = await fetch(`{{ url_for('safety_map.api_routes') }}?${queryParams.toString()}`);
+
+      const data = await response.json();
+      routeLoadingIndicator.style.display = "none";
+      searchRouteBtn.disabled = false;
+
+      if (!response.ok || !data.success) {
+        displayRouteError(data.error || "Route could not be calculated. Please check location names.");
+        return;
+      }
+
+      // Successful calculation
+      currentRouteData = data;
+      clearRouteMapLayers();
+
+      // Update Form Stats
+      safeRouteDuration.innerText = data.safe_route.duration_formatted;
+      safeRouteDistance.innerText = data.safe_route.distance_km + " km";
+      safeRouteScore.innerText = data.safe_route.safety_score + "%";
+      safeRouteLighting.innerText = data.safe_route.lighting;
+
+      fastRouteDuration.innerText = data.fastest_route.duration_formatted;
+      fastRouteDistance.innerText = data.fastest_route.distance_km + " km";
+      fastRouteScore.innerText = data.fastest_route.safety_score + "%";
+
+      // Render Checkpoints
+      checkpointsList.innerHTML = "";
+      if (data.safe_route.checkpoints && data.safe_route.checkpoints.length > 0) {
+        checkpointsCountBadge.innerText = data.safe_route.checkpoints.length + " Verified Points";
+        data.safe_route.checkpoints.forEach(cp => {
+          const item = document.createElement("div");
+          item.style.padding = "6px 8px";
+          item.style.background = "#ffffff";
+          item.style.border = "1px solid var(--border-color)";
+          item.style.borderRadius = "4px";
+          item.style.display = "flex";
+          item.style.justifyContent = "space-between";
+          item.style.alignItems = "center";
+          item.innerHTML = `
+            <div>
+              <span style="font-weight:600; color:var(--color-primary-navy);">${cp.icon} ${cp.name}</span>
+              <div style="font-size:0.72rem; color:var(--text-muted);">${cp.desc}</div>
+            </div>
+            <a href="tel:${cp.contact.split('/')[0].trim()}" class="btn btn-outline btn-xs" style="font-size:0.7rem; padding:2px 6px;">
+              📞 Call
+            </a>
+          `;
+          checkpointsList.appendChild(item);
+
+          // Add checkpoint marker on map
+          const cpPinClass = cp.type === 'POLICE' ? 'pin-police' : (cp.type === 'HOSPITAL' ? 'pin-hospital' : 'pin-fuel');
+          const cpMarker = L.marker([cp.latitude, cp.longitude], {
+            icon: createCustomIcon(cp.icon, cpPinClass),
+            title: cp.name
+          }).addTo(map).bindPopup(`
+            <div style="font-size:0.85rem; line-height:1.4;">
+              <strong>${cp.icon} ${cp.name}</strong><br>
+              <span style="color:#64748b; font-size:0.75rem;">Verified Safe Haven</span>
+              <p style="margin:4px 0;">${cp.desc}</p>
+              <a href="tel:${cp.contact.split('/')[0].trim()}" class="btn btn-sm btn-primary" style="margin-top:4px; display:inline-block; font-size:0.75rem; padding:2px 8px;">
+                📞 Call ${cp.contact}
+              </a>
+            </div>
+          `);
+          routeMarkers.push(cpMarker);
+        });
+      }
+
+      // External Google Maps directions URL
+      const gmapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${data.start.lat},${data.start.lng}&destination=${data.destination.lat},${data.destination.lng}&travelmode=driving`;
+      openGoogleMapsBtn.href = gmapsUrl;
+
+      // Draw Fastest Route Polyline (Indigo)
+      fastPolyline = L.polyline(data.fastest_route.coordinates, {
+        color: '#6366f1',
+        weight: 4,
+        opacity: 0.45,
+        lineJoin: 'round'
+      }).addTo(map);
+
+      // Draw Safe Route Polyline (Emerald Green)
+      safePolyline = L.polyline(data.safe_route.coordinates, {
+        color: '#10b981',
+        weight: 7,
+        opacity: 1.0,
+        lineJoin: 'round'
+      }).addTo(map);
+
+      // Markers for Start and Destination
+      const startMarker = L.marker([data.start.lat, data.start.lng], {
+        icon: createCustomIcon("🚩", "pin-origin"),
+        title: "Start"
+      }).addTo(map).bindPopup(`<strong>🚩 Origin:</strong> ${data.start.name}`);
+
+      const destMarker = L.marker([data.destination.lat, data.destination.lng], {
+        icon: createCustomIcon("🏁", "pin-dest"),
+        title: "Destination"
+      }).addTo(map).bindPopup(`<strong>🏁 Destination:</strong> ${data.destination.name}`);
+
+      routeMarkers.push(startMarker);
+      routeMarkers.push(destMarker);
+
+      // Fit map to show the entire route
+      map.fitBounds(safePolyline.getBounds(), { padding: [50, 50] });
+
+      // Show container & clear button
+      routeResultsContainer.style.display = "block";
+      clearRouteBtn.style.display = "inline-block";
+      updateActiveRouteSelection("safe");
+
+    } catch (err) {
+      console.error("Routing error:", err);
+      displayRouteError("Network error calculating route. Please verify your connection.");
+      searchRouteBtn.disabled = false;
+    }
+  });
+
+  // Clear Route
+  clearRouteBtn.addEventListener("click", () => {
+    clearRouteMapLayers();
+    routeResultsContainer.style.display = "none";
+    clearRouteBtn.style.display = "none";
+    routeStatusNotice.style.display = "none";
+    map.setView([defaultLat, defaultLng], 12);
+  });
+
+  // Allow pressing Enter on destination input to trigger route search
+  routeDestInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      searchRouteBtn.click();
+    }
+  });
+});
+</script>
+{% endblock %}

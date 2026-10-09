@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Emergency Event History — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">SOS Event History</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Private audit trail of emergency activations triggered by your account.
+      </p>
+    </div>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline btn-sm">&larr; Back to Dashboard</a>
+  </div>
+
+  <div class="card">
+    {% if events %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 10px;">Date & Time</th>
+              <th style="padding: 10px;">Token</th>
+              <th style="padding: 10px;">Status</th>
+              <th style="padding: 10px;">Coordinates</th>
+              <th style="padding: 10px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for ev in events %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 10px;">{{ ev.created_at.strftime('%d %b %Y, %I:%M %p') }}</td>
+                <td style="padding: 12px 10px;"><code>{{ ev.token[:8] }}...</code></td>
+                <td style="padding: 12px 10px;">
+                  {% if ev.status == 'ACTIVE' %}
+                    <span class="badge badge-red">{{ ev.status }}</span>
+                  {% elif ev.status == 'RESOLVED' %}
+                    <span class="badge" style="background:#dcfce7; color:#166534;">{{ ev.status }}</span>
+                  {% else %}
+                    <span class="badge badge-neutral">{{ ev.status }}</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 12px 10px; font-size: 0.85rem; color: var(--text-muted);">
+                  {% if ev.latitude and ev.longitude %}
+                    {{ "%.4f"|format(ev.latitude) }}, {{ "%.4f"|format(ev.longitude) }}
+                  {% else %}
+                    Not captured
+                  {% endif %}
+                </td>
+                <td style="padding: 12px 10px;">
+                  <a href="{{ url_for('sos.status', token=ev.token) }}" class="btn btn-outline btn-sm" style="font-size: 0.8rem;">
+                    View &rarr;
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+        <p>No emergency activations recorded.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

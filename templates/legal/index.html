@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Women's Legal Rights Library (हिंदी & English) — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+
+  <!-- Header Banner -->
+  <div style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h1 style="font-size: 1.9rem; color: var(--color-primary-navy);">
+          Women's Legal Rights Library
+        </h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Verified legal awareness in plain English & सरल हिंदी. Know your rights under Indian Law.
+        </p>
+      </div>
+
+      <!-- Language Selector Toggle -->
+      <div style="display: flex; gap: 6px; background: #e2e8f0; padding: 4px; border-radius: var(--radius-md);">
+        <a href="{{ url_for('legal.index', category=selected_category, q=search_query, lang='en') }}" class="btn btn-sm {% if lang == 'en' %}btn-primary{% else %}btn-outline{% endif %}" style="padding: 4px 12px; font-size: 0.85rem; border: none;">
+          English
+        </a>
+        <a href="{{ url_for('legal.index', category=selected_category, q=search_query, lang='hi') }}" class="btn btn-sm {% if lang == 'hi' %}btn-primary{% else %}btn-outline{% endif %}" style="padding: 4px 12px; font-size: 0.85rem; border: none;">
+          हिंदी (Hindi)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mandatory Legal Disclaimer Notice -->
+  <div class="card" style="background: #f1f5f9; border-left: 5px solid var(--color-purple); padding: 14px 18px; margin-bottom: 24px;">
+    <div style="font-size: 0.85rem; color: #334155; line-height: 1.5;">
+      ⚖️ <strong>Legal Information Disclaimer:</strong> SheShield provides general educational awareness and guided complaint drafts, <em>not formal legal advice</em>. Law application depends on individual case facts. All women in India are eligible for free court representation via NALSA (Dial 15100).
+    </div>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="card" style="margin-bottom: 24px; padding: 18px;">
+    <form method="GET" action="{{ url_for('legal.index') }}" style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <input type="hidden" name="lang" value="{{ lang }}">
+      
+      <div style="flex: 2; min-width: 240px;">
+        <input type="text" name="q" class="form-control" placeholder="Search laws, POSH, domestic violence, maintenance... / खोजें" value="{{ search_query }}">
+      </div>
+
+      <div style="flex: 1; min-width: 200px;">
+        <select name="category" class="form-control" onchange="this.form.submit()">
+          <option value="">All Categories / सभी श्रेणियां</option>
+          {% for cat_val, cat_label in categories %}
+            <option value="{{ cat_val }}" {% if selected_category == cat_val %}selected{% endif %}>
+              {{ cat_label }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+        🔍 Search / खोजें
+      </button>
+
+      {% if search_query or selected_category %}
+        <a href="{{ url_for('legal.index', lang=lang) }}" class="btn btn-outline" style="white-space: nowrap;">
+          Clear Filters
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Category Quick Badges -->
+  <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;">
+    <a href="{{ url_for('legal.index', lang=lang) }}" class="badge {% if not selected_category %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 12px; font-size: 0.85rem;">
+      All ({{ resources|length }})
+    </a>
+    {% for cat_val, cat_label in categories %}
+      <a href="{{ url_for('legal.index', category=cat_val, lang=lang) }}" class="badge {% if selected_category == cat_val %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 12px; font-size: 0.85rem;">
+        {{ cat_label.split('/')[0].strip() }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Resource Cards List -->
+  {% if resources %}
+    <div style="display: grid; grid-template-columns: 1fr; gap: 16px;">
+      {% for res in resources %}
+        <div class="card" style="margin-bottom: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <span class="badge badge-teal" style="font-size: 0.75rem; margin-bottom: 6px;">
+                {{ res.category.replace('_', ' ') }}
+              </span>
+              <h2 style="font-size: 1.3rem; color: var(--color-primary-navy);">
+                {% if lang == 'hi' %}{{ res.title_hi }}{% else %}{{ res.title_en }}{% endif %}
+              </h2>
+            </div>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">
+              Reviewed: {{ res.last_reviewed_at.strftime('%b %Y') }}
+            </span>
+          </div>
+
+          <p style="color: #334155; font-size: 0.95rem; line-height: 1.6; margin-bottom: 12px;">
+            {% if lang == 'hi' %}{{ res.summary_hi }}{% else %}{{ res.summary_en }}{% endif %}
+          </p>
+
+          {% if res.legal_sections %}
+            <div style="background: var(--bg-main); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--color-purple); margin-bottom: 12px;">
+              <strong>Applicable Statute:</strong> {{ res.legal_sections }}
+            </div>
+          {% endif %}
+
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px;">
+            <a href="{{ url_for('legal.detail', resource_id=res.id, lang=lang) }}" class="btn btn-outline btn-sm" style="color: var(--color-purple); border-color: var(--color-purple);">
+              Read Full Explanation & Legal Steps &rarr;
+            </a>
+
+            {% if res.source_url %}
+              <a href="{{ res.source_url }}" target="_blank" rel="noopener noreferrer" style="font-size: 0.8rem; color: var(--text-muted); text-decoration: underline;">
+                Official Source (Govt Portal) ↗
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 48px 24px; color: var(--text-muted);">
+      <div style="font-size: 2.5rem; margin-bottom: 12px;">⚖️</div>
+      <h3>No resources match your search criteria.</h3>
+      <p style="margin-top: 6px;">Try adjusting your keywords or clearing the category filter.</p>
+      <a href="{{ url_for('legal.index', lang=lang) }}" class="btn btn-primary btn-sm" style="margin-top: 16px;">
+        View All Legal Topics
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

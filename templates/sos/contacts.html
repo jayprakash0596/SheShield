@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Manage Trusted Contacts — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Trusted Emergency Contacts</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Add family members, friends, or trusted guardians who should be notified when you trigger SOS.
+      </p>
+    </div>
+    <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline btn-sm">&larr; Back to Dashboard</a>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+
+    <!-- Add New Contact Form -->
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom: 16px;">Add New Contact</h2>
+
+      <form method="POST" action="{{ url_for('sos.contacts') }}" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          <label for="name" class="form-label">{{ form.name.label.text }} *</label>
+          {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else ""), placeholder="e.g. Suman Sharma") }}
+          {% for error in form.name.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="phone_number" class="form-label">{{ form.phone_number.label.text }} *</label>
+          {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else ""), placeholder="9876543210") }}
+          {% for error in form.phone_number.errors %}<span class="form-error">{{ error }}</span>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="relationship" class="form-label">{{ form.relationship.label.text }}</label>
+          {{ form.relationship(class="form-control") }}
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            {{ form.is_primary(style="width: 18px; height: 18px;") }}
+            <span>{{ form.is_primary.label.text }}</span>
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+            {{ form.notify_sms(style="width: 18px; height: 18px;") }}
+            <span>{{ form.notify_sms.label.text }}</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block">
+          {{ form.submit.label.text }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Existing Contacts List -->
+    <div class="card">
+      <h2 class="card-title" style="margin-bottom: 16px;">Your Emergency Circle ({{ contacts|length }})</h2>
+
+      {% if contacts %}
+        <ul style="list-style: none;">
+          {% for c in contacts %}
+            <li style="padding: 14px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700; font-size: 1.05rem;">
+                  {{ c.name }}
+                  {% if c.is_primary %}
+                    <span class="badge badge-purple" style="font-size: 0.75rem; margin-left: 6px;">Primary</span>
+                  {% endif %}
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 2px;">
+                  📞 {{ c.phone_number }} • {{ c.relationship or 'Contact' }}
+                </div>
+                <div style="font-size: 0.8rem; color: #64748b; margin-top: 2px;">
+                  SMS Alerts: {% if c.notify_sms %}<span style="color: var(--color-success);">Enabled</span>{% else %}Disabled{% endif %}
+                </div>
+              </div>
+              <div>
+                <form method="POST" action="{{ url_for('sos.delete_contact', contact_id=c.id) }}" onsubmit="return confirm('Are you sure you want to remove this contact?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-sos-red); border-color: #fca5a5;">
+                    Delete
+                  </button>
+                </form>
+              </div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <div style="text-align: center; padding: 36px 12px; color: var(--text-muted);">
+          <div style="font-size: 2.5rem; margin-bottom: 10px;">👥</div>
+          <p>No trusted contacts added yet.</p>
+          <p style="font-size: 0.85rem; margin-top: 4px;">Fill out the form on the left to add your first emergency contact.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

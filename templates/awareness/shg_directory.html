@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Women-Led Self-Help Groups (EARN Directory) — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">
+        Women-Led Self-Help Groups Directory
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Grassroots initiatives, community livelihoods, and women-led cooperatives across India.
+      </p>
+    </div>
+    <a href="{{ url_for('awareness.index') }}" class="btn btn-outline btn-sm">
+      &larr; Back to Awareness Hub
+    </a>
+  </div>
+
+  <!-- Non-commercial directory disclaimer -->
+  <div class="card" style="background: #f0fdfa; border-left: 5px solid var(--color-teal); padding: 14px 18px; margin-bottom: 24px;">
+    <div style="font-size: 0.88rem; color: #134e4a; line-height: 1.5;">
+      ℹ️ <strong>Directory Notice:</strong> This is a lightweight informational directory for discovery, community networking, and educational awareness. SheShield does not process payments, operate commercial storefronts, or take commissions.
+    </div>
+  </div>
+
+  <!-- State Search / Filter Form -->
+  <div class="card" style="padding: 16px; margin-bottom: 24px;">
+    <form method="GET" action="{{ url_for('awareness.shg_directory') }}" style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <div style="flex: 1; min-width: 240px;">
+        <input type="text" name="state" class="form-control" placeholder="Filter by State (e.g. Maharashtra, Rajasthan)..." value="{{ state_filter }}">
+      </div>
+      <button type="submit" class="btn btn-teal">
+        Filter Directory
+      </button>
+      {% if state_filter %}
+        <a href="{{ url_for('awareness.shg_directory') }}" class="btn btn-outline">
+          Clear
+        </a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- SHG Cards Grid -->
+  {% if groups %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px;">
+      {% for g in groups %}
+        <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <span class="badge badge-teal" style="font-size: 0.75rem;">{{ g.initiative_type }}</span>
+              {% if g.is_verified %}
+                <span class="badge" style="background: #dcfce7; color: #166534; font-size: 0.75rem;">Verified</span>
+              {% endif %}
+            </div>
+
+            <h2 style="font-size: 1.25rem; color: var(--color-primary-navy); margin-bottom: 4px;">
+              {{ g.name }}
+            </h2>
+            <div style="font-size: 0.85rem; color: var(--color-purple); font-weight: 600; margin-bottom: 12px;">
+              📍 {{ g.district }}, {{ g.state }}
+            </div>
+
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+              {{ g.description }}
+            </p>
+          </div>
+
+          {% if g.public_contact %}
+            <div style="border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.85rem; color: var(--text-muted);">
+              <strong>Public Contact:</strong><br>
+              <code>{{ g.public_contact }}</code>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 40px 20px; color: var(--text-muted);">
+      <p>No self-help groups found for the specified filter.</p>
+      <a href="{{ url_for('awareness.shg_directory') }}" class="btn btn-outline btn-sm" style="margin-top: 12px;">
+        Show All Groups
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}Draft a Complaint — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <div style="margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Prepare Complaint Draft</h1>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Provide facts objectively. Sensitive fields are optional. Your draft remains confidential.
+        </p>
+      </div>
+      <a href="{{ url_for('complaints.index') }}" class="btn btn-outline btn-sm">&larr; Back to Workflow</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <form method="POST" action="{{ url_for('complaints.new') }}" enctype="multipart/form-data" novalidate>
+      {{ form.hidden_tag() }}
+
+      <!-- Section A: Category & Language -->
+      <h2 style="font-size: 1.2rem; color: var(--color-purple); margin-bottom: 16px; border-bottom: 2px solid var(--color-purple-light); padding-bottom: 6px;">
+        1. Category & Language
+      </h2>
+
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="category" class="form-label">{{ form.category.label.text }} *</label>
+          {{ form.category(class="form-control" + (" is-invalid" if form.category.errors else "")) }}
+          {% for err in form.category.errors %}<span class="form-error">{{ err }}</span>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="preferred_language" class="form-label">{{ form.preferred_language.label.text }}</label>
+          {{ form.preferred_language(class="form-control") }}
+        </div>
+      </div>
+
+      <!-- Section B: Complainant Details (Privacy-conscious) -->
+      <h2 style="font-size: 1.2rem; color: var(--color-teal); margin-top: 28px; margin-bottom: 16px; border-bottom: 2px solid var(--color-teal-light); padding-bottom: 6px;">
+        2. Complainant Information (Optional if unsafe to disclose)
+      </h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="full_name" class="form-label">{{ form.full_name.label.text }}</label>
+          {{ form.full_name(class="form-control", placeholder="Your name or leave blank for safety") }}
+        </div>
+
+        <div class="form-group">
+          <label for="age_group" class="form-label">{{ form.age_group.label.text }}</label>
+          {{ form.age_group(class="form-control") }}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="phone_number" class="form-label">{{ form.phone_number.label.text }}</label>
+          {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else ""), placeholder="10-digit mobile number") }}
+          {% for err in form.phone_number.errors %}<span class="form-error">{{ err }}</span>{% endfor %}
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">{{ form.email.label.text }}</label>
+          {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="name@example.com") }}
+          {% for err in form.email.errors %}<span class="form-error">{{ err }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <!-- Section C: Incident Facts & Timeline -->
+      <h2 style="font-size: 1.2rem; color: var(--color-primary-navy); margin-top: 28px; margin-bottom: 16px; border-bottom: 2px solid var(--border-color); padding-bottom: 6px;">
+        3. Incident Statement of Facts
+      </h2>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="incident_date" class="form-label">{{ form.incident_date.label.text }}</label>
+          {{ form.incident_date(class="form-control", placeholder="e.g. 15 March 2026 or Ongoing") }}
+        </div>
+
+        <div class="form-group">
+          <label for="state" class="form-label">{{ form.state.label.text }}</label>
+          {{ form.state(class="form-control", placeholder="e.g. Uttar Pradesh") }}
+        </div>
+
+        <div class="form-group">
+          <label for="district" class="form-label">{{ form.district.label.text }}</label>
+          {{ form.district(class="form-control", placeholder="e.g. Lucknow") }}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="form-group">
+          <label for="incident_location" class="form-label">{{ form.incident_location.label.text }}</label>
+          {{ form.incident_location(class="form-control", placeholder="e.g. Office floor, bus stand, or digital platform") }}
+        </div>
+
+        <div class="form-group">
+          <label for="person_involved" class="form-label">{{ form.person_involved.label.text }}</label>
+          {{ form.person_involved(class="form-control", placeholder="Name / role of person or organization") }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="incident_description" class="form-label">{{ form.incident_description.label.text }} *</label>
+        {{ form.incident_description(class="form-control" + (" is-invalid" if form.incident_description.errors else ""), rows="5", placeholder="Describe the chronological facts: what happened, when, where, and what was said or done...") }}
+        <span class="form-hint">At least 20 characters. Include clear facts. Avoid unsubstantiated speculation.</span>
+        {% for err in form.incident_description.errors %}<span class="form-error">{{ err }}</span>{% endfor %}
+      </div>
+
+      <div class="form-group" style="background: var(--bg-main); padding: 12px; border-radius: var(--radius-md);">
+        <label style="display: flex; gap: 10px; align-items: center; cursor: pointer;">
+          {{ form.is_ongoing(style="width: 18px; height: 18px;") }}
+          <span style="font-weight: 600; color: var(--color-primary-navy);">{{ form.is_ongoing.label.text }}</span>
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label for="requested_assistance" class="form-label">{{ form.requested_assistance.label.text }}</label>
+        {{ form.requested_assistance(class="form-control", rows="2", placeholder="e.g., Immediate police FIR, restraining order, content takedown, internal committee inquiry...") }}
+      </div>
+
+      <div class="form-group">
+        <label for="supporting_doc" class="form-label">{{ form.supporting_doc.label.text }}</label>
+        {{ form.supporting_doc(class="form-control") }}
+        <span class="form-hint">Allowed file formats: PDF, PNG, JPG, TXT. Max size: 5MB. Files are kept private.</span>
+      </div>
+
+      <!-- Section D: Consent & Disclaimer -->
+      <div class="form-group" style="background: #faf5ff; border: 1px solid #d8b4fe; padding: 16px; border-radius: var(--radius-md); margin-top: 24px;">
+        <label style="display: flex; gap: 12px; align-items: flex-start; cursor: pointer;">
+          {{ form.consent_acknowledgement(style="width: 20px; height: 20px; margin-top: 2px;") }}
+          <span style="font-size: 0.9rem; color: #4c1d95; line-height: 1.5;">
+            <strong>Declaration & Consent:</strong> {{ form.consent_acknowledgement.label.text }}
+          </span>
+        </label>
+        {% for err in form.consent_acknowledgement.errors %}<span class="form-error" style="margin-left: 32px;">{{ err }}</span>{% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-lg btn-block" style="margin-top: 20px; font-weight: 700;">
+        {{ form.submit.label.text }} &rarr;
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

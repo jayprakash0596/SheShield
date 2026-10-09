@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}Draft {{ draft.reference_code }} — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <!-- Header & Status Bar -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <span class="badge badge-purple" style="font-size: 0.8rem; margin-bottom: 4px;">{{ draft.category.replace('_', ' ') }}</span>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">
+        Complaint Draft: <code>{{ draft.reference_code }}</code>
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.85rem;">
+        Last updated: {{ draft.updated_at.strftime('%d %B %Y, %I:%M %p UTC') }}
+      </p>
+    </div>
+
+    <div>
+      {% if draft.status == 'EXTERNAL_PORTAL_OPENED' %}
+        <span class="badge" style="background:#e0f2fe; color:#0369a1; padding: 6px 12px;">PORTAL OPENED</span>
+      {% elif draft.status == 'READY_FOR_PORTAL' %}
+        <span class="badge" style="background:#dcfce7; color:#166534; padding: 6px 12px;">READY TO CONTINUE</span>
+      {% else %}
+        <span class="badge badge-teal" style="padding: 6px 12px;">DRAFT SAVED</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Action Bar -->
+  <div class="card" style="padding: 14px 20px; background: #f8fafc; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('complaints.download_txt', draft_id=draft.id) }}" class="btn btn-outline btn-sm">
+          💾 Download as TXT
+        </a>
+        <a href="{{ url_for('complaints.download_pdf', draft_id=draft.id) }}" class="btn btn-outline btn-sm">
+          📄 Download as PDF
+        </a>
+        <a href="{{ url_for('complaints.edit', draft_id=draft.id) }}" class="btn btn-outline btn-sm" style="color: var(--color-purple); border-color: var(--color-purple);">
+          ✏️ Edit Text
+        </a>
+      </div>
+
+      <div style="display: flex; gap: 8px; align-items: center;">
+        <a href="{{ url_for('complaints.continue_to_portal', draft_id=draft.id) }}" class="btn btn-primary btn-sm" style="font-weight: 700;">
+          Continue to Official Portal &rarr;
+        </a>
+        <form method="POST" action="{{ url_for('complaints.delete', draft_id=draft.id) }}" onsubmit="return confirm('Permanently delete this complaint draft? This cannot be undone.');" style="margin: 0;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline btn-sm" style="color: var(--color-sos-red); border-color: #fca5a5;">
+            Delete
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Routed Authority Box -->
+  <div class="card" style="border-left: 5px solid var(--color-teal); background: #f0fdfa; margin-bottom: 20px;">
+    <h2 style="font-size: 1.05rem; color: var(--color-teal-hover); margin-bottom: 4px;">
+      Designated Statutory Authority: {{ routing.portal_name }}
+    </h2>
+    <p style="font-size: 0.9rem; color: #134e4a; margin-bottom: 6px;">
+      {{ routing.description }}
+    </p>
+    <div style="font-size: 0.8rem; color: #0f766e;">
+      <strong>Submission Protocol:</strong> {{ routing.requirements }}
+    </div>
+  </div>
+
+  <!-- Formatted Draft Document Preview -->
+  <div class="card" style="border: 2px solid #cbd5e1; box-shadow: var(--shadow-md);">
+    <div style="display: flex; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;">
+      <span style="font-weight: 700; color: var(--color-primary-navy);">DOCUMENT PREVIEW (तैयार मसौदा)</span>
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Confidential • Prepared on SheShield</span>
+    </div>
+
+    <pre style="white-space: pre-wrap; word-break: break-word; font-family: inherit; font-size: 0.95rem; line-height: 1.7; color: #1e293b; background: #fff; padding: 8px;">{{ draft.generated_draft_text }}</pre>
+
+    {% if draft.attachment_original_name %}
+      <div style="border-top: 1px solid var(--border-color); margin-top: 20px; padding-top: 12px; font-size: 0.85rem; color: var(--text-muted);">
+        📎 <strong>Supporting Attachment:</strong> {{ draft.attachment_original_name }} (Stored securely)
+      </div>
+    {% endif %}
+  </div>
+
+  <div style="display: flex; justify-content: space-between; margin-top: 24px;">
+    <a href="{{ url_for('complaints.my_drafts') if session.get('user_id') else url_for('complaints.index') }}" class="btn btn-outline btn-sm">
+      &larr; Back to My Drafts
+    </a>
+    <a href="{{ url_for('complaints.continue_to_portal', draft_id=draft.id) }}" class="btn btn-primary btn-sm">
+      Proceed to Government Portal Guidance &rarr;
+    </a>
+  </div>
+
+</div>
+{% endblock %}

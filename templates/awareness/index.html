@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Awareness & Educational Resources — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <!-- Header -->
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Awareness & Safety Education</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Essential safety guides, digital hygiene, and verified government welfare schemes.
+      </p>
+    </div>
+    <a href="{{ url_for('awareness.shg_directory') }}" class="btn btn-teal btn-sm">
+      🤝 Self-Help Group Directory (EARN) &rarr;
+    </a>
+  </div>
+
+  <!-- Highlight Banner for SHG Directory -->
+  <div class="card" style="background: linear-gradient(135deg, #f0fdfa 0%, #e0f2fe 100%); border: 1px solid #99f6e4; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="font-size: 1.15rem; color: var(--color-teal-hover); margin-bottom: 4px;">
+          Women-Led Self-Help Groups (स्वयं सहायता समूह)
+        </h2>
+        <p style="color: #0f766e; font-size: 0.9rem;">
+          Discover grassroots community cooperatives, handicraft artisans, and clean energy initiatives across India.
+        </p>
+      </div>
+      <a href="{{ url_for('awareness.shg_directory') }}" class="btn btn-teal btn-sm">
+        Explore {{ shg_count }} Groups &rarr;
+      </a>
+    </div>
+  </div>
+
+  <!-- Category Filter Pills -->
+  <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;">
+    <a href="{{ url_for('awareness.index') }}" class="badge {% if not selected_category %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">
+      All Topics
+    </a>
+    <a href="{{ url_for('awareness.index', category='PERSONAL_SAFETY') }}" class="badge {% if selected_category == 'PERSONAL_SAFETY' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">
+      Personal Safety
+    </a>
+    <a href="{{ url_for('awareness.index', category='CYBER_SAFETY') }}" class="badge {% if selected_category == 'CYBER_SAFETY' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">
+      Cyber Hygiene
+    </a>
+    <a href="{{ url_for('awareness.index', category='GOVT_SCHEMES') }}" class="badge {% if selected_category == 'GOVT_SCHEMES' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">
+      Government Schemes
+    </a>
+  </div>
+
+  <!-- Articles List -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 20px;">
+    {% for art in articles %}
+      <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+        <div>
+          <span class="badge badge-teal" style="font-size: 0.75rem; margin-bottom: 8px;">
+            {{ art.category.replace('_', ' ') }}
+          </span>
+          <h2 style="font-size: 1.2rem; color: var(--color-primary-navy); margin-bottom: 8px; line-height: 1.4;">
+            {{ art.title }}
+          </h2>
+          <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+            {{ art.summary }}
+          </p>
+        </div>
+        <div style="border-top: 1px solid var(--border-color); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.8rem; color: var(--text-light);">
+            {{ art.last_reviewed_at.strftime('%b %Y') }}
+          </span>
+          <a href="{{ url_for('awareness.article_detail', slug=art.slug) }}" class="btn btn-outline btn-sm" style="color: var(--color-purple); border-color: var(--color-purple);">
+            Read Guide &rarr;
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Create Account — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 520px; margin: 32px auto;">
+  <div class="card" style="box-shadow: var(--shadow-md);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="background: var(--color-teal-light); color: var(--color-teal); width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 12px;">
+        ✨
+      </div>
+      <h1 style="font-size: 1.6rem; color: var(--color-primary-navy); margin-bottom: 6px;">Register on SheShield</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Create a private profile to protect yourself, save emergency contacts, and prepare complaint drafts.
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.register') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="username" class="form-label">{{ form.username.label.text }} *</label>
+        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="e.g. ananya_24", autofocus=True) }}
+        <span class="form-hint">At least 3 characters. Unique identifier.</span>
+        {% for error in form.username.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="email" class="form-label">{{ form.email.label.text }}</label>
+        {{ form.email(class="form-control" + (" is-invalid" if form.email.errors else ""), placeholder="ananya@example.com") }}
+        <span class="form-hint">Optional. Stored privately for account recovery.</span>
+        {% for error in form.email.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="phone_number" class="form-label">{{ form.phone_number.label.text }}</label>
+        {{ form.phone_number(class="form-control" + (" is-invalid" if form.phone_number.errors else ""), placeholder="9876543210") }}
+        <span class="form-hint">Optional 10-digit Indian mobile number.</span>
+        {% for error in form.phone_number.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">{{ form.password.label.text }} *</label>
+        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="Minimum 8 characters") }}
+        <span class="form-hint">Minimum 8 characters. Strong combination recommended.</span>
+        {% for error in form.password.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="confirm_password" class="form-label">{{ form.confirm_password.label.text }} *</label>
+        {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), placeholder="Re-type password") }}
+        {% for error in form.confirm_password.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 8px;">
+        {{ form.submit.label.text }}
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 0.9rem;">
+      <span style="color: var(--text-muted);">Already registered?</span>
+      <a href="{{ url_for('auth.login') }}" style="color: var(--color-purple); font-weight: 600; text-decoration: none; margin-left: 4px;">
+        Sign In / लॉग इन करें
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}User Dashboard — SheShield{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">
+        Hello, {{ user.profile.full_name or user.username }} 👋
+      </h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Welcome to your private SheShield safety center. All data is protected and private to you.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('profile.edit') }}" class="btn btn-outline btn-sm">
+        ⚙️ Settings & Privacy
+      </a>
+      <a href="{{ url_for('sos.index') }}" class="btn btn-danger btn-sm" style="font-weight: 700;">
+        🚨 SOS Help Center
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Active SOS Alert if in progress -->
+{% if active_sos %}
+  <div class="card" style="border-left: 6px solid var(--color-sos-red); background: #fef2f2; margin-bottom: 24px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="color: var(--color-sos-red); font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+          🚨 ACTIVE EMERGENCY SOS IN PROGRESS
+        </h2>
+        <p style="color: #7f1d1d; font-size: 0.9rem; margin-top: 4px;">
+          Triggered at: {{ active_sos.created_at.strftime('%d %b %Y, %I:%M %p') }} | Token: <code>{{ active_sos.token[:8] }}...</code>
+        </p>
+      </div>
+      <div>
+        <a href="{{ url_for('sos.status', token=active_sos.token) }}" class="btn btn-danger btn-sm">
+          View Emergency Status Page &rarr;
+        </a>
+      </div>
+    </div>
+  </div>
+{% endif %}
+
+<!-- Stats Cards Grid -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 28px;">
+  <div class="card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 2rem; font-weight: 800; color: var(--color-purple);">{{ contacts|length }}</div>
+    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Trusted Contacts</div>
+    <a href="{{ url_for('sos.contacts') }}" class="btn btn-outline btn-sm" style="margin-top: 12px; font-size: 0.8rem;">Manage Contacts</a>
+  </div>
+
+  <div class="card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 2rem; font-weight: 800; color: var(--color-teal);">{{ drafts|length }}</div>
+    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">Complaint Drafts</div>
+    <a href="{{ url_for('complaints.my_drafts') }}" class="btn btn-outline btn-sm" style="margin-top: 12px; font-size: 0.8rem;">View Drafts</a>
+  </div>
+
+  <div class="card" style="text-align: center; padding: 20px;">
+    <div style="font-size: 2rem; font-weight: 800; color: var(--color-primary-navy);">{{ recent_sos|length }}</div>
+    <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 4px;">SOS Event Records</div>
+    <a href="{{ url_for('sos.history') }}" class="btn btn-outline btn-sm" style="margin-top: 12px; font-size: 0.8rem;">View History</a>
+  </div>
+</div>
+
+<!-- Two Columns: Contacts and Drafts -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 24px;">
+
+  <!-- Trusted Contacts Quick View -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Trusted Contacts (आपातकालीन संपर्क)</h2>
+      <a href="{{ url_for('sos.contacts') }}" class="btn btn-outline btn-sm">+ Add New</a>
+    </div>
+
+    {% if contacts %}
+      <ul style="list-style: none;">
+        {% for contact in contacts %}
+          <li style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>{{ contact.name }}</strong>
+              {% if contact.is_primary %}
+                <span class="badge badge-purple" style="margin-left: 6px;">Primary</span>
+              {% endif %}
+              <div style="font-size: 0.85rem; color: var(--text-muted);">
+                📞 {{ contact.phone_number }} • {{ contact.relationship or 'Contact' }}
+              </div>
+            </div>
+            <a href="tel:{{ contact.phone_number }}" class="btn btn-outline btn-sm" style="font-size: 0.8rem;">Call</a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+        <p style="margin-bottom: 12px;">No trusted contacts added yet.</p>
+        <a href="{{ url_for('sos.contacts') }}" class="btn btn-teal btn-sm">Add Your First Contact</a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Complaint Drafts Quick View -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Complaint Drafts (तैयार मसौदे)</h2>
+      <a href="{{ url_for('complaints.new') }}" class="btn btn-primary btn-sm">+ New Draft</a>
+    </div>
+
+    {% if drafts %}
+      <ul style="list-style: none;">
+        {% for draft in drafts[:4] %}
+          <li style="padding: 12px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>{{ draft.category.replace('_', ' ').title() }}</strong>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                Ref: <code>{{ draft.reference_code }}</code> • {{ draft.updated_at.strftime('%d %b %Y') }}
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <a href="{{ url_for('complaints.view', draft_id=draft.id) }}" class="btn btn-outline btn-sm" style="font-size: 0.8rem;">Open</a>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+      {% if drafts|length > 4 %}
+        <div style="text-align: center; margin-top: 12px;">
+          <a href="{{ url_for('complaints.my_drafts') }}" style="font-size: 0.85rem; color: var(--color-purple);">View all {{ drafts|length }} drafts &rarr;</a>
+        </div>
+      {% endif %}
+    {% else %}
+      <div style="text-align: center; padding: 24px; color: var(--text-muted);">
+        <p style="margin-bottom: 12px;">No complaint drafts prepared yet.</p>
+        <a href="{{ url_for('complaints.new') }}" class="btn btn-primary btn-sm">Draft a Complaint</a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

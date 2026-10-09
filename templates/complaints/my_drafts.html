@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}My Complaint Drafts — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">My Complaint Drafts</h1>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Private incident drafts saved to your account.
+      </p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <a href="{{ url_for('dashboard.index') }}" class="btn btn-outline btn-sm">&larr; Back to Dashboard</a>
+      <a href="{{ url_for('complaints.new') }}" class="btn btn-primary btn-sm">+ New Complaint Draft</a>
+    </div>
+  </div>
+
+  <div class="card">
+    {% if drafts %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 10px;">Reference</th>
+              <th style="padding: 10px;">Category</th>
+              <th style="padding: 10px;">Last Modified</th>
+              <th style="padding: 10px;">Status</th>
+              <th style="padding: 10px; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in drafts %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 10px; font-weight: 600;">
+                  <code>{{ d.reference_code }}</code>
+                </td>
+                <td style="padding: 12px 10px;">
+                  {{ d.category.replace('_', ' ').title() }}
+                </td>
+                <td style="padding: 12px 10px; color: var(--text-muted); font-size: 0.85rem;">
+                  {{ d.updated_at.strftime('%d %b %Y, %I:%M %p') }}
+                </td>
+                <td style="padding: 12px 10px;">
+                  {% if d.status == 'EXTERNAL_PORTAL_OPENED' %}
+                    <span class="badge" style="background:#e0f2fe; color:#0369a1;">Portal Opened</span>
+                  {% elif d.status == 'READY_FOR_PORTAL' %}
+                    <span class="badge" style="background:#dcfce7; color:#166534;">Ready</span>
+                  {% else %}
+                    <span class="badge badge-neutral">{{ d.status }}</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 12px 10px; text-align: right;">
+                  <div style="display: inline-flex; gap: 6px;">
+                    <a href="{{ url_for('complaints.view', draft_id=d.id) }}" class="btn btn-outline btn-sm" style="font-size: 0.8rem;">
+                      View
+                    </a>
+                    <a href="{{ url_for('complaints.download_pdf', draft_id=d.id) }}" class="btn btn-outline btn-sm" style="font-size: 0.8rem;">
+                      PDF
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 48px 20px; color: var(--text-muted);">
+        <div style="font-size: 2.5rem; margin-bottom: 12px;">✍️</div>
+        <h2 style="font-size: 1.3rem; color: var(--color-primary-navy); margin-bottom: 6px;">No drafts saved yet</h2>
+        <p style="margin-bottom: 20px;">Prepare a structured complaint draft whenever you want to document an incident clearly.</p>
+        <a href="{{ url_for('complaints.new') }}" class="btn btn-primary">
+          Start Your First Draft
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

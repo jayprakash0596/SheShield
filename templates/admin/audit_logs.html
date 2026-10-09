@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Audit Logs — Admin SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Administrative Audit Trail</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Authoritative record of administrative modifications and moderations.</p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-outline btn-sm">&larr; Back to Admin Home</a>
+  </div>
+
+  <div class="card">
+    {% if logs %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 10px;">Timestamp (UTC)</th>
+              <th style="padding: 10px;">Admin ID</th>
+              <th style="padding: 10px;">Action</th>
+              <th style="padding: 10px;">Target Type</th>
+              <th style="padding: 10px;">Target ID</th>
+              <th style="padding: 10px;">Details & IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in logs %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 10px; color: var(--text-muted);">{{ l.created_at.strftime('%d %b %Y, %I:%M:%S %p') }}</td>
+                <td style="padding: 10px;">User #{{ l.admin_id or 'System' }}</td>
+                <td style="padding: 10px; font-weight: 600;">{{ l.action }}</td>
+                <td style="padding: 10px;"><code>{{ l.target_type }}</code></td>
+                <td style="padding: 10px;">#{{ l.target_id }}</td>
+                <td style="padding: 10px; color: #475569;">
+                  {{ l.details or 'None' }} <br>
+                  <span style="font-size: 0.75rem; color: #94a3b8;">IP: {{ l.ip_address }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); padding: 20px; text-align: center;">No audit log records found.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

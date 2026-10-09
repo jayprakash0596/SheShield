@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Sign In — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 480px; margin: 32px auto;">
+  <div class="card" style="box-shadow: var(--shadow-md);">
+    <div style="text-align: center; margin-bottom: 24px;">
+      <div style="background: var(--color-purple-light); color: var(--color-purple); width: 56px; height: 56px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 12px;">
+        🛡️
+      </div>
+      <h1 style="font-size: 1.6rem; color: var(--color-primary-navy); margin-bottom: 6px;">Sign In to SheShield</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Securely manage your emergency contacts, private complaint drafts, and safety settings.
+      </p>
+    </div>
+
+    <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="form-group">
+        <label for="username" class="form-label">{{ form.username.label.text }}</label>
+        {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else ""), placeholder="e.g. priya_sharma", autofocus=True) }}
+        {% for error in form.username.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label for="password" class="form-label">{{ form.password.label.text }}</label>
+        {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), placeholder="••••••••") }}
+        {% for error in form.password.errors %}
+          <span class="form-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" style="margin-top: 8px;">
+        {{ form.submit.label.text }}
+      </button>
+    </form>
+
+    <div style="text-align: center; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border-color); font-size: 0.9rem;">
+      <span style="color: var(--text-muted);">Don't have an account yet?</span>
+      <a href="{{ url_for('auth.register') }}" style="color: var(--color-purple); font-weight: 600; text-decoration: none; margin-left: 4px;">
+        Create Account / नया खाता बनाएं
+      </a>
+    </div>
+  </div>
+
+  <!-- Safety reassurance banner -->
+  <div style="background: #f1f5f9; padding: 12px; border-radius: var(--radius-md); font-size: 0.8rem; color: #64748b; text-align: center;">
+    🔒 Your privacy is strictly preserved. Passwords are cryptographically salted & hashed. Location is never shared without your explicit SOS action.
+  </div>
+</div>
+{% endblock %}

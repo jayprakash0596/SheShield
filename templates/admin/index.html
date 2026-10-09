@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 1060px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <span class="badge" style="background: #fef3c7; color: #92400e; margin-bottom: 6px;">Staff Administration</span>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">SheShield Admin Dashboard</h1>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <a href="{{ url_for('admin.reports') }}" class="btn btn-teal btn-sm">Moderate Reports ({{ stats.pending_reports_count }})</a>
+      <a href="{{ url_for('admin.legal_resources') }}" class="btn btn-outline btn-sm">Legal Resources</a>
+      <a href="{{ url_for('admin.articles') }}" class="btn btn-outline btn-sm">Articles</a>
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline btn-sm">Audit Trail</a>
+    </div>
+  </div>
+
+  <!-- Key Aggregated Statistics Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px;">
+    <div class="card" style="padding: 16px; text-align: center; margin-bottom: 0;">
+      <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-primary-navy);">{{ stats.users_count }}</div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Registered Users</div>
+    </div>
+    <div class="card" style="padding: 16px; text-align: center; margin-bottom: 0; border: 1px solid #fde68a;">
+      <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-warning);">{{ stats.pending_reports_count }}</div>
+      <div style="font-size: 0.85rem; color: #92400e; margin-top: 4px;">Pending Hazard Reports</div>
+    </div>
+    <div class="card" style="padding: 16px; text-align: center; margin-bottom: 0;">
+      <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-teal);">{{ stats.approved_reports_count }}</div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Approved Map Pins</div>
+    </div>
+    <div class="card" style="padding: 16px; text-align: center; margin-bottom: 0;">
+      <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-purple);">{{ stats.legal_resources_count }}</div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Legal Topics</div>
+    </div>
+    <div class="card" style="padding: 16px; text-align: center; margin-bottom: 0;">
+      <div style="font-size: 1.8rem; font-weight: 800; color: var(--color-sos-red);">{{ stats.active_sos_count }}</div>
+      <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Active SOS Alerts</div>
+    </div>
+  </div>
+
+  <!-- Pending Reports for Moderation -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Pending Community Safety Reports (Needs Review)</h2>
+      <a href="{{ url_for('admin.reports') }}" class="btn btn-outline btn-sm">View All &rarr;</a>
+    </div>
+
+    {% if pending_reports %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 8px;">Date</th>
+              <th style="padding: 8px;">Title</th>
+              <th style="padding: 8px;">Category</th>
+              <th style="padding: 8px;">Coordinates</th>
+              <th style="padding: 8px; text-align: right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in pending_reports %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 10px 8px; font-size: 0.8rem; color: var(--text-muted);">{{ r.created_at.strftime('%d %b %Y') }}</td>
+                <td style="padding: 10px 8px; font-weight: 600;">{{ r.title }}</td>
+                <td style="padding: 10px 8px;"><span class="badge badge-neutral">{{ r.category }}</span></td>
+                <td style="padding: 10px 8px; font-size: 0.8rem;">{{ "%.4f"|format(r.latitude) }}, {{ "%.4f"|format(r.longitude) }}</td>
+                <td style="padding: 10px 8px; text-align: right;">
+                  <form method="POST" action="{{ url_for('admin.moderate_report', report_id=r.id) }}" style="display: inline-flex; gap: 4px;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" name="action" value="APPROVE" class="btn btn-teal btn-sm" style="font-size: 0.75rem; padding: 3px 8px;">Approve</button>
+                    <button type="submit" name="action" value="REJECT" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 3px 8px; color: var(--color-sos-red);">Reject</button>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9rem;">No pending reports waiting for moderation.</p>
+    {% endif %}
+  </div>
+
+  <!-- Recent Admin Audit Activity -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">Recent Administrative Audit Logs</h2>
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-outline btn-sm">Full Trail</a>
+    </div>
+
+    {% if recent_logs %}
+      <ul style="list-style: none; font-size: 0.85rem;">
+        {% for l in recent_logs %}
+          <li style="padding: 8px 0; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <strong>{{ l.action }}</strong> — {{ l.target_type }} #{{ l.target_id }}
+              <div style="color: var(--text-muted); font-size: 0.8rem;">{{ l.details }}</div>
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.8rem;">
+              {{ l.created_at.strftime('%d %b, %I:%M %p') }}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.9rem;">No audit logs recorded yet.</p>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

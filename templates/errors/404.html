@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}404 Page Not Found — SheShield{% endblock %}
+{% block content %}
+<div class="card" style="text-align: center; max-width: 600px; margin: 40px auto; padding: 48px 24px;">
+  <div style="font-size: 3.5rem; margin-bottom: 16px;">🔍</div>
+  <h1 style="font-size: 1.8rem; color: var(--color-primary-navy); margin-bottom: 12px;">Page Not Found (404)</h1>
+  <p style="color: var(--text-muted); margin-bottom: 24px;">
+    The requested page or resource could not be found. It may have been moved or the address may have a typo.
+  </p>
+  <div style="display: flex; gap: 12px; justify-content: center;">
+    <a href="{{ url_for('main.index') }}" class="btn btn-primary">Return to Home</a>
+    <a href="{{ url_for('sos.index') }}" class="btn btn-danger">Emergency SOS</a>
+  </div>
+</div>
+{% endblock %}

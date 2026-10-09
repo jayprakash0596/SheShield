@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Edit Draft {{ draft.reference_code }} — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Edit Complaint Draft</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">
+        Reference: <code>{{ draft.reference_code }}</code>
+      </p>
+    </div>
+    <a href="{{ url_for('complaints.view', draft_id=draft.id) }}" class="btn btn-outline btn-sm">
+      &larr; Cancel & Return to Preview
+    </a>
+  </div>
+
+  <div class="card">
+    <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+      You can directly revise any dates, incident descriptions, requested remedies, or names below. Changes will be saved into your private database record and reflected in future downloads.
+    </p>
+
+    <form method="POST" action="{{ url_for('complaints.edit', draft_id=draft.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+      <div class="form-group">
+        <label for="draft_text" class="form-label">Full Draft Text Content</label>
+        <textarea name="draft_text" id="draft_text" class="form-control" rows="18" style="font-family: inherit; font-size: 0.95rem; line-height: 1.6;" required>{{ draft.generated_draft_text }}</textarea>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">
+        <a href="{{ url_for('complaints.view', draft_id=draft.id) }}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="font-weight: 700;">
+          Save Changes & Update Draft
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

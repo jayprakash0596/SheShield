@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SheShield Lite — 2G / Low Bandwidth Mode</title>
+  <style>
+    /* Ultra-lightweight CSS for basic feature-phone mobile browsers */
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fdfdfd;
+      color: #111;
+      margin: 0;
+      padding: 12px;
+      line-height: 1.5;
+    }
+    .header-box {
+      background: #0f172a;
+      color: #fff;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .pill-btn {
+      display: inline-block;
+      padding: 8px 14px;
+      margin: 4px;
+      background: #e2e8f0;
+      color: #0f172a;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+    }
+    .btn-red {
+      background: #dc2626 !important;
+      color: #fff !important;
+      font-size: 1.1rem;
+      display: block;
+      text-align: center;
+      padding: 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      text-decoration: none;
+      margin-bottom: 12px;
+    }
+    .section-card {
+      border: 1px solid #ccc;
+      padding: 12px;
+      margin-bottom: 16px;
+      border-radius: 6px;
+      background: #fff;
+    }
+    .section-title {
+      color: #0f172a;
+      font-size: 1.15rem;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 4px;
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    .helpline-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px dashed #ddd;
+    }
+    .helpline-link {
+      font-weight: bold;
+      color: #dc2626;
+      font-size: 1.1rem;
+      text-decoration: none;
+    }
+    .lang-bar {
+      margin-bottom: 12px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Language Toggle -->
+  <div class="lang-bar">
+    <a href="{{ url_for('lite.index', lang='en') }}" class="pill-btn">English</a>
+    <a href="{{ url_for('lite.index', lang='hi') }}" class="pill-btn">हिंदी (Hindi)</a>
+    <a href="{{ url_for('main.index') }}" class="pill-btn">Standard Web App ↗</a>
+  </div>
+
+  <div class="header-box">
+    <h1 style="margin: 0; font-size: 1.4rem;">🛡️ SheShield Lite</h1>
+    <p style="margin: 4px 0 0; font-size: 0.85rem;">Fast • Low Data • 2G Optimized for All Phones</p>
+  </div>
+
+  <!-- Immediate Call Button -->
+  <a href="tel:112" class="btn-red">
+    🚨 DIAL 112 DIRECTLY (POLICE EMERGENCY)
+  </a>
+
+  <!-- PILLAR 1: PROTECT -->
+  <div class="section-card">
+    <h2 class="section-title">1. PROTECT (सुरक्षा सहायता)</h2>
+
+    <div class="helpline-row">
+      <span>🚨 National Emergency:</span>
+      <a href="tel:112" class="helpline-link">Call 112</a>
+    </div>
+    <div class="helpline-row">
+      <span>👩 Women Helpline:</span>
+      <a href="tel:1091" class="helpline-link">Call 1091</a>
+    </div>
+    <div class="helpline-row">
+      <span>🤝 Women in Distress:</span>
+      <a href="tel:181" class="helpline-link">Call 181</a>
+    </div>
+    <div class="helpline-row">
+      <span>💻 Cyber Crime:</span>
+      <a href="tel:1930" class="helpline-link">Call 1930</a>
+    </div>
+    <div class="helpline-row">
+      <span>👶 Childline:</span>
+      <a href="tel:1098" class="helpline-link">Call 1098</a>
+    </div>
+
+    <!-- Normal Keypad Phone SMS Instructions (Section 13) -->
+    <div style="background: #f1f5f9; padding: 10px; border-radius: 4px; margin-top: 12px; font-size: 0.85rem;">
+      <strong>Keypad / Non-Smart Phone Guidance:</strong>
+      <p style="margin: 4px 0;">
+        If your phone does not support internet or GPS:
+      </p>
+      <ol style="padding-left: 18px; margin: 4px 0;">
+        <li>Dial <strong>112</strong> immediately. The telecom carrier transmits your cellular tower location directly to police dispatch.</li>
+        <li>Send an SMS to your trusted family member with your nearest landmark or bus stop.</li>
+      </ol>
+    </div>
+
+    {% if contacts %}
+      <h3 style="font-size: 0.95rem; margin-top: 14px; margin-bottom: 6px;">Your Saved Contacts:</h3>
+      <ul>
+        {% for c in contacts %}
+          <li><strong>{{ c.name }}:</strong> <a href="tel:{{ c.phone_number }}">{{ c.phone_number }}</a> ({{ c.relationship or 'Contact' }})</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <!-- PILLAR 2: KNOW -->
+  <div class="section-card">
+    <h2 class="section-title">2. KNOW (कानूनी अधिकार)</h2>
+
+    {% for res in legal_snippets %}
+      <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+        <strong style="color: #4338ca;">
+          {% if lang == 'hi' %}{{ res.title_hi }}{% else %}{{ res.title_en }}{% endif %}
+        </strong>
+        <p style="margin: 4px 0; font-size: 0.85rem; color: #333;">
+          {% if lang == 'hi' %}{{ res.summary_hi }}{% else %}{{ res.summary_en }}{% endif %}
+        </p>
+        <span style="font-size: 0.75rem; color: #666;">Statute: {{ res.legal_sections or 'Statutory' }}</span>
+      </div>
+    {% endfor %}
+
+    <div style="margin-top: 10px;">
+      <a href="https://nalsa.gov.in/womens-assistance/" class="pill-btn" target="_blank" rel="noopener">NALSA Free Legal Aid Portal ↗</a>
+      <a href="https://ncwapps.nic.in/onlinecomplaintsv2/" class="pill-btn" target="_blank" rel="noopener">NCW Complaints ↗</a>
+    </div>
+  </div>
+
+  <!-- PILLAR 3: EARN -->
+  <div class="section-card">
+    <h2 class="section-title">3. EARN (महिला स्वयं सहायता समूह)</h2>
+    <p style="font-size: 0.85rem; color: #555; margin-top: 0;">
+      Informational directory of verified women-led community groups:
+    </p>
+
+    {% for g in shg_groups %}
+      <div style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #eee;">
+        <strong>{{ g.name }}</strong> ({{ g.district }}, {{ g.state }})<br>
+        <span style="font-size: 0.85rem; color: #0d9488;">Initiative: {{ g.initiative_type }}</span>
+        <p style="font-size: 0.85rem; margin: 4px 0; color: #444;">{{ g.description }}</p>
+        {% if g.public_contact %}
+          <span style="font-size: 0.8rem; color: #666;">Contact: {{ g.public_contact }}</span>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div style="text-align: center; font-size: 0.8rem; color: #666; padding: 12px 0;">
+    SheShield Lite &copy; 2026 • Dedicated to Women's Safety in India
+  </div>
+
+</body>
+</html>

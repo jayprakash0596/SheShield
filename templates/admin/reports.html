@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Moderate Community Reports — Admin SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 1060px; margin: 0 auto;">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+    <div>
+      <h1 style="font-size: 1.8rem; color: var(--color-primary-navy);">Community Safety Reports Moderation</h1>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Review hazard and lighting submissions before making them visible on public maps.</p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-outline btn-sm">&larr; Back to Admin Home</a>
+  </div>
+
+  <!-- Status Filter Tabs -->
+  <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+    <a href="{{ url_for('admin.reports', status='PENDING') }}" class="badge {% if filter_status == 'PENDING' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">Pending Review</a>
+    <a href="{{ url_for('admin.reports', status='APPROVED') }}" class="badge {% if filter_status == 'APPROVED' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">Approved</a>
+    <a href="{{ url_for('admin.reports', status='REJECTED') }}" class="badge {% if filter_status == 'REJECTED' %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">Rejected</a>
+    <a href="{{ url_for('admin.reports', status='') }}" class="badge {% if not filter_status %}badge-purple{% else %}badge-neutral{% endif %}" style="text-decoration: none; padding: 6px 14px; font-size: 0.85rem;">All Reports</a>
+  </div>
+
+  <div class="card">
+    {% if reports %}
+      <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--border-color); text-align: left;">
+              <th style="padding: 10px;">ID & Date</th>
+              <th style="padding: 10px;">Title & Category</th>
+              <th style="padding: 10px;">Description</th>
+              <th style="padding: 10px;">Coordinates</th>
+              <th style="padding: 10px;">Status</th>
+              <th style="padding: 10px; text-align: right;">Moderate</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in reports %}
+              <tr style="border-bottom: 1px solid var(--border-color);">
+                <td style="padding: 12px 10px; font-size: 0.8rem; color: var(--text-muted);">
+                  #{{ r.id }}<br>{{ r.created_at.strftime('%d %b %Y') }}
+                </td>
+                <td style="padding: 12px 10px;">
+                  <strong>{{ r.title }}</strong><br>
+                  <span class="badge badge-neutral" style="font-size: 0.75rem;">{{ r.category }}</span>
+                </td>
+                <td style="padding: 12px 10px; font-size: 0.85rem; max-width: 280px;">
+                  {{ r.description }}
+                </td>
+                <td style="padding: 12px 10px; font-size: 0.8rem; color: var(--text-muted);">
+                  {{ "%.4f"|format(r.latitude) }}, {{ "%.4f"|format(r.longitude) }}<br>
+                  <span style="font-size: 0.75rem;">{{ r.address or '' }}</span>
+                </td>
+                <td style="padding: 12px 10px;">
+                  {% if r.status == 'APPROVED' %}
+                    <span class="badge" style="background:#dcfce7; color:#166534;">Approved</span>
+                  {% elif r.status == 'REJECTED' %}
+                    <span class="badge badge-red">Rejected</span>
+                  {% else %}
+                    <span class="badge" style="background:#fef3c7; color:#92400e;">Pending</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 12px 10px; text-align: right;">
+                  <form method="POST" action="{{ url_for('admin.moderate_report', report_id=r.id) }}" style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="display: flex; gap: 4px;">
+                      <button type="submit" name="action" value="APPROVE" class="btn btn-teal btn-sm" style="font-size: 0.75rem;">Approve</button>
+                      <button type="submit" name="action" value="REJECT" class="btn btn-outline btn-sm" style="font-size: 0.75rem; color: var(--color-sos-red);">Reject</button>
+                    </div>
+                  </form>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div style="text-align: center; padding: 36px 12px; color: var(--text-muted);">
+        <p>No reports match this status filter.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

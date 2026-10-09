@@ -1,0 +1,281 @@
+{% extends "base.html" %}
+{% block title %}Emergency Tracker #{{ event.token[:8] }} — SheShield{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <!-- Trusted Contact Alert Header -->
+  <div style="background: linear-gradient(135deg, #7f1d1d, #991b1b); color: #fff; padding: 20px; border-radius: var(--radius-lg); margin-bottom: 24px; box-shadow: var(--shadow-md);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+      <div>
+        <span class="badge" style="background: #fef2f2; color: #991b1b; font-weight: 700; margin-bottom: 8px; display: inline-block;">
+          🚨 TRUSTED CONTACT EMERGENCY PORTAL
+        </span>
+        <h1 style="font-size: 1.6rem; margin: 4px 0 8px 0; color: #ffffff;">
+          {% if victim and victim.profile and victim.profile.full_name %}
+            Emergency Alert for {{ victim.profile.full_name }}
+          {% elif victim %}
+            Emergency Alert for {{ victim.username }}
+          {% else %}
+            Emergency Alert Active
+          {% endif %}
+        </h1>
+        <p style="margin: 0; font-size: 0.9rem; color: #fecaca;">
+          Token: <code>{{ event.token }}</code> • Activated: {{ event.created_at.strftime('%d %b %Y, %I:%M:%S %p UTC') }}
+        </p>
+      </div>
+
+      <div>
+        {% if event.status == 'ACTIVE' %}
+          <span class="badge" style="background: #ef4444; color: #fff; font-size: 1rem; padding: 8px 16px; font-weight: 700; animation: pulse-subtle 2s infinite; border: 2px solid #fff;">
+            🚨 ACTIVE EMERGENCY
+          </span>
+        {% elif event.status == 'RESOLVED' %}
+          <span class="badge" style="background: #22c55e; color: #fff; font-size: 1rem; padding: 8px 16px; font-weight: 700;">
+            ✅ SAFE / RESOLVED
+          </span>
+        {% else %}
+          <span class="badge" style="background: #64748b; color: #fff; font-size: 1rem; padding: 8px 16px;">
+            ⛔ CANCELLED
+          </span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Immediate Action Strip -->
+  <div class="card" style="border-left: 6px solid var(--color-sos-red); background: #fff5f5; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div>
+        <h2 style="color: #991b1b; font-size: 1.15rem; margin-bottom: 4px;">Immediate First Responder Contacts</h2>
+        <p style="color: #7f1d1d; font-size: 0.88rem; margin: 0;">
+          If the individual is in life-threatening danger, contact emergency police services now.
+        </p>
+      </div>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <a href="tel:112" class="btn btn-danger" style="font-weight: 700; font-size: 1rem;">📞 Call Police (112)</a>
+        <a href="tel:1091" class="btn btn-outline" style="background: #fff; color: #991b1b; border-color: #fca5a5; font-weight: 700;">📞 Helpline (1091)</a>
+        {% if victim and victim.profile and victim.profile.phone_number %}
+          <a href="tel:{{ victim.profile.phone_number }}" class="btn btn-teal" style="font-weight: 700;">
+            📞 Call {{ victim.username }}
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Location & Map -->
+  <div class="card" style="margin-bottom: 20px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <h2 class="card-title" style="margin: 0;">📍 Live Emergency Location</h2>
+      <span id="liveStatusBadge" class="badge badge-teal" style="font-size: 0.8rem;">🟢 Live Monitor Active</span>
+    </div>
+
+    {% if event.latitude and event.longitude %}
+      <div style="background: var(--bg-main); padding: 16px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid var(--border-color);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+          <div>
+            <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">CURRENT RECORDED GPS COORDINATES:</div>
+            <code id="coordDisplay" style="font-size: 1.1rem; font-weight: 700;">{{ "%.5f"|format(event.latitude) }}, {{ "%.5f"|format(event.longitude) }}</code>
+            {% if event.accuracy %}
+              <span id="accuracyDisplay" style="color: var(--text-muted); font-size: 0.85rem; margin-left: 8px;">(Accuracy: ±{{ event.accuracy|round }}m)</span>
+            {% endif %}
+          </div>
+          <a id="mapsLink" href="https://maps.google.com/?q={{ event.latitude }},{{ event.longitude }}" target="_blank" rel="noopener noreferrer" class="btn btn-danger btn-sm" style="font-weight: 700;">
+            Open in Google Maps ↗
+          </a>
+        </div>
+      </div>
+    {% else %}
+      <div id="noCoordBanner" style="background: var(--color-warning-light); color: #78350f; padding: 14px; border-radius: var(--radius-md); margin-bottom: 16px; border: 1px solid #fde68a;">
+        ⚠️ GPS coordinates were not provided at initial trigger. Monitoring for updates...
+      </div>
+    {% endif %}
+
+    <!-- Breadcrumb History -->
+    {% if updates %}
+      <h3 style="font-size: 0.95rem; margin-top: 16px; margin-bottom: 10px; color: var(--color-primary-navy);">Recorded Location Pings ({{ updates|length }})</h3>
+      <ul id="breadcrumbList" style="list-style: none; font-size: 0.85rem; color: var(--text-muted); max-height: 160px; overflow-y: auto;">
+        {% for u in updates %}
+          <li style="padding: 6px 0; border-bottom: 1px dashed var(--border-color);">
+            ⏱ {{ u.recorded_at.strftime('%I:%M:%S %p') }} — Lat: {{ "%.5f"|format(u.latitude) }}, Lng: {{ "%.5f"|format(u.longitude) }} (±{{ u.accuracy|round if u.accuracy else 'N/A' }}m)
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <!-- Emergency Media Evidence Vault (Ambient Voice + Photos) -->
+  <div class="card" style="border-left: 5px solid var(--color-purple); margin-bottom: 20px;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div>
+        <h2 class="card-title" style="margin: 0;">🎙️ Emergency Evidence Vault</h2>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin: 4px 0 0 0;">
+          Ambient sound recordings & camera snapshots captured automatically from the device.
+        </p>
+      </div>
+      <span class="badge badge-purple" id="evidenceCountBadge">{{ evidences|length }} Evidence Item(s)</span>
+    </div>
+
+    <div id="evidenceContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-top: 14px;">
+      {% if evidences %}
+        {% for ev in evidences %}
+          <div class="evidence-card" data-evidence-id="{{ ev.id }}" style="background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="badge {% if ev.evidence_type == 'AUDIO' %}badge-teal{% elif ev.evidence_type == 'IMAGE' %}badge-purple{% else %}badge-red{% endif %}">
+                {% if ev.evidence_type == 'AUDIO' %}🎙️ AMBIENT AUDIO{% elif ev.evidence_type == 'IMAGE' %}📷 CAMERA SNAPSHOT{% else %}🎥 VIDEO{% endif %}
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">
+                ⏱ {{ ev.created_at.strftime('%I:%M:%S %p') }}
+              </span>
+            </div>
+
+            {% if ev.evidence_type == 'AUDIO' %}
+              <div style="margin: 10px 0;">
+                <audio controls preload="metadata" style="width: 100%; height: 38px;">
+                  <source src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" type="audio/webm">
+                  <source src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" type="audio/ogg">
+                  Your browser does not support audio playback.
+                </audio>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>Duration: {{ ev.duration_seconds|round(1) if ev.duration_seconds else '8.0' }}s</span>
+                <a href="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" download="evidence_audio_{{ ev.id }}.webm" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+              </div>
+            {% elif ev.evidence_type == 'IMAGE' %}
+              <div style="margin: 10px 0; text-align: center; background: #000; border-radius: 6px; overflow: hidden; max-height: 240px;">
+                <img src="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" alt="Emergency camera snapshot" style="max-width: 100%; max-height: 240px; object-fit: contain; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+              </div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                <span>Click image to expand</span>
+                <a href="{{ url_for('sos.serve_evidence', evidence_id=ev.id) }}" download="evidence_snapshot_{{ ev.id }}.jpg" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <div id="noEvidencePlaceholder" style="grid-column: 1 / -1; text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 0.9rem;">
+          <span style="font-size: 2rem; display: block; margin-bottom: 6px;">🎙️</span>
+          Listening for ambient audio & camera snapshot uploads from the user's phone...
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Resolution Status if Concluded -->
+  {% if event.status != 'ACTIVE' %}
+    <div class="card" style="background: #f8fafc;">
+      <h3 style="font-size: 1.1rem; color: var(--color-primary-navy); margin-bottom: 6px;">
+        {{ '✅ Emergency Resolved' if event.status == 'RESOLVED' else '⛔ Alert Cancelled' }}
+      </h3>
+      <p style="font-size: 0.9rem; color: var(--text-muted);">
+        Concluded at: {{ event.resolved_at.strftime('%d %b %Y, %I:%M %p') if event.resolved_at else 'Recorded' }}
+      </p>
+      {% if event.resolution_notes %}
+        <p style="font-size: 0.9rem; color: #334155; margin-top: 6px;">
+          <strong>Notes:</strong> {{ event.resolution_notes }}
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const token = "{{ event.token }}";
+  const isEventActive = "{{ event.status }}" === "ACTIVE";
+
+  if (!isEventActive) return;
+
+  // Poll for newly uploaded evidence & location pings every 5 seconds
+  const pollUrl = "{{ url_for('sos.poll_evidence', token=event.token) }}";
+  const evidenceContainer = document.getElementById("evidenceContainer");
+  const noEvidencePlaceholder = document.getElementById("noEvidencePlaceholder");
+  const evidenceCountBadge = document.getElementById("evidenceCountBadge");
+  const liveStatusBadge = document.getElementById("liveStatusBadge");
+
+  const knownEvidenceIds = new Set();
+  document.querySelectorAll(".evidence-card").forEach(el => {
+    const eid = el.getAttribute("data-evidence-id");
+    if (eid) knownEvidenceIds.add(parseInt(eid));
+  });
+
+  async function checkUpdates() {
+    try {
+      const res = await fetch(pollUrl);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data.status !== "ACTIVE") {
+        if (liveStatusBadge) {
+          liveStatusBadge.innerText = "Status Updated: " + data.status;
+          liveStatusBadge.className = "badge badge-neutral";
+        }
+        setTimeout(() => window.location.reload(), 1500);
+        return;
+      }
+
+      if (data.evidences && data.evidences.length > 0) {
+        if (noEvidencePlaceholder) noEvidencePlaceholder.style.display = "none";
+        if (evidenceCountBadge) evidenceCountBadge.innerText = `${data.evidences.length} Evidence Item(s)`;
+
+        data.evidences.forEach(ev => {
+          if (!knownEvidenceIds.has(ev.id)) {
+            knownEvidenceIds.add(ev.id);
+            const card = document.createElement("div");
+            card.className = "evidence-card";
+            card.setAttribute("data-evidence-id", ev.id);
+            card.style.cssText = "background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 14px; animation: pulse-subtle 1.5s 1;";
+
+            let mediaContent = "";
+            if (ev.type === "AUDIO") {
+              mediaContent = `
+                <div style="margin: 10px 0;">
+                  <audio controls autoplay preload="metadata" style="width: 100%; height: 38px;">
+                    <source src="${ev.url}" type="audio/webm">
+                    <source src="${ev.url}" type="audio/ogg">
+                  </audio>
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                  <span>Duration: ${ev.duration}s</span>
+                  <a href="${ev.url}" download="evidence_audio_${ev.id}.webm" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+                </div>
+              `;
+            } else if (ev.type === "IMAGE") {
+              mediaContent = `
+                <div style="margin: 10px 0; text-align: center; background: #000; border-radius: 6px; overflow: hidden; max-height: 240px;">
+                  <img src="${ev.url}" alt="Emergency snapshot" style="max-width: 100%; max-height: 240px; object-fit: contain; cursor: pointer;" onclick="window.open(this.src, '_blank')">
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                  <span>Click image to expand</span>
+                  <a href="${ev.url}" download="evidence_snapshot_${ev.id}.jpg" style="color: var(--color-purple); font-weight: 600;">Download ⤓</a>
+                </div>
+              `;
+            }
+
+            const badgeClass = ev.type === "AUDIO" ? "badge-teal" : "badge-purple";
+            const badgeIcon = ev.type === "AUDIO" ? "🎙️ AMBIENT AUDIO" : "📷 CAMERA SNAPSHOT";
+
+            card.innerHTML = `
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="badge ${badgeClass}">${badgeIcon}</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">⏱ ${ev.created_at}</span>
+              </div>
+              ${mediaContent}
+            `;
+            evidenceContainer.prepend(card);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn("Polling error:", e);
+    }
+  }
+
+  setInterval(checkUpdates, 5000);
+});
+</script>
+{% endblock %}

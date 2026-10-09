@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="SheShield — Women's Safety, Legal Rights & Emergency Support Platform in India. Emergency SOS, legal guidance, complaint drafting, and verified resources.">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}SheShield — Women's Safety & Legal Rights Platform{% endblock %}</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Accessibility Skip Link -->
+  <a href="#main-content" class="skip-link">Skip to main content / मुख्य सामग्री पर जाएं</a>
+
+  <!-- Top Safety Bar with Quick Exit -->
+  <div class="safety-bar" role="complementary" aria-label="Safety controls">
+    <div class="safety-bar-text">
+      <span>🛡️ <strong>Safety Notice:</strong> In immediate danger, call <strong>112</strong> immediately.</span>
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <a href="{{ url_for('lite.index') if 'lite' in config.get('BLUEPRINTS', {}) or True else '/lite' }}" style="color: #94a3b8; font-size: 0.8rem; text-decoration: underline;">Lite / 2G Mode</a>
+      <a href="https://www.google.com" class="quick-exit-btn" title="Quickly exit this site and open Google (Press ESC 3 times)" aria-label="Quick Exit this page immediately">
+        ⚡ Quick Exit (ESC)
+      </a>
+    </div>
+  </div>
+
+  <!-- Primary Navigation -->
+  <header>
+    <nav class="navbar" aria-label="Main Navigation">
+      <div class="nav-container">
+        <a href="{{ url_for('main.index') }}" class="brand-link" aria-label="SheShield Home">
+          <span class="brand-shield-icon">🛡️</span>
+          <span>SheShield</span>
+        </a>
+
+        <!-- Mobile Toggle Button -->
+        <button id="navToggleBtn" class="nav-toggle-btn" aria-label="Toggle navigation menu" aria-expanded="false">
+          ☰
+        </button>
+
+        <ul class="nav-links" id="navLinks">
+          <li><a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">Home</a></li>
+          <li><a href="{{ url_for('sos.index') }}" class="nav-link {% if request.endpoint and 'sos' in request.endpoint %}active{% endif %}">Protect (SOS)</a></li>
+          <li><a href="{{ url_for('safety_map.index') }}" class="nav-link {% if request.endpoint and 'safety_map' in request.endpoint %}active{% endif %}">Safety Map</a></li>
+          <li><a href="{{ url_for('legal.index') }}" class="nav-link {% if request.endpoint and 'legal' in request.endpoint %}active{% endif %}">Legal Rights</a></li>
+          <li><a href="{{ url_for('complaints.index') }}" class="nav-link {% if request.endpoint and 'complaints' in request.endpoint %}active{% endif %}">File Complaint</a></li>
+          <li><a href="{{ url_for('awareness.index') }}" class="nav-link {% if request.endpoint and 'awareness' in request.endpoint %}active{% endif %}">Awareness</a></li>
+          {% if session.get('user_id') %}
+            <li><a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint and 'dashboard' in request.endpoint %}active{% endif %}">Dashboard</a></li>
+            {% if session.get('is_admin') %}
+              <li><a href="{{ url_for('admin.index') }}" class="nav-link" style="color: #f59e0b;">Admin</a></li>
+            {% endif %}
+          {% endif %}
+        </ul>
+
+        <div class="nav-actions">
+          <a href="{{ url_for('sos.index') }}" class="btn-nav-sos" aria-label="Trigger Emergency Assistance">
+            🚨 SOS Help
+          </a>
+          {% if session.get('user_id') %}
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-outline" style="color:#fff; border-color:rgba(255,255,255,0.3);">Logout</a>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-sm btn-outline" style="color:#fff; border-color:rgba(255,255,255,0.3);">Login</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Emergency Helplines Quick Banner -->
+  <div style="max-width: 1200px; margin: 16px auto 0; padding: 0 16px;">
+    <aside class="helpline-ribbon" aria-label="Official Verified Emergency Helplines">
+      <div class="helpline-item">
+        <span>🚨 National Emergency:</span>
+        <a href="tel:112" class="helpline-number">112</a>
+      </div>
+      <div class="helpline-item">
+        <span>👩 Women Helpline:</span>
+        <a href="tel:1091" class="helpline-number">1091</a>
+      </div>
+      <div class="helpline-item">
+        <span>🤝 Women in Distress:</span>
+        <a href="tel:181" class="helpline-number">181</a>
+      </div>
+      <div class="helpline-item">
+        <span>💻 Cyber Crime:</span>
+        <a href="tel:1930" class="helpline-number">1930</a>
+      </div>
+      <div class="helpline-item">
+        <span>👶 Childline:</span>
+        <a href="tel:1098" class="helpline-number">1098</a>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Main Content Area -->
+  <main id="main-content" class="main-content" tabindex="-1">
+    <!-- Flash Notifications -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container" role="alert" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="flash-alert flash-{{ category }}">
+              <span>{{ message }}</span>
+              <button type="button" class="flash-close-btn" aria-label="Close notification">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div>
+        <h2 class="footer-title">🛡️ SheShield India</h2>
+        <p style="font-size: 0.9rem; line-height: 1.6; margin-bottom: 12px;">
+          An independent, privacy-focused women's safety, legal awareness, and complaint assistance platform. Designed for empowerment, privacy, and accessibility.
+        </p>
+        <p style="font-size: 0.8rem; color: #64748b;">
+          Disclaimer: SheShield provides informational legal assistance and is not a government agency or law enforcement service. For immediate emergencies, call 112.
+        </p>
+      </div>
+      <div>
+        <h3 class="footer-title">Quick Navigation</h3>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('sos.index') }}">Emergency Assistance (SOS)</a></li>
+          <li><a href="{{ url_for('safety_map.index') }}">Community Safety Map</a></li>
+          <li><a href="{{ url_for('legal.index') }}">Women's Legal Rights (Hindi/English)</a></li>
+          <li><a href="{{ url_for('complaints.index') }}">File / Draft Complaint</a></li>
+          <li><a href="{{ url_for('awareness.index') }}">Safety & Scheme Awareness</a></li>
+          <li><a href="/lite">Lite Version (Low Data / 2G)</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="footer-title">Official Government Portals</h3>
+        <ul class="footer-links">
+          <li><a href="https://ncwapps.nic.in/onlinecomplaintsv2/" target="_blank" rel="noopener noreferrer">NCW Portal (ncw.nic.in) ↗</a></li>
+          <li><a href="https://cybercrime.gov.in/" target="_blank" rel="noopener noreferrer">Cyber Crime Portal (cybercrime.gov.in) ↗</a></li>
+          <li><a href="https://shebox.wcd.gov.in/" target="_blank" rel="noopener noreferrer">SHe-Box Workplace Safety ↗</a></li>
+          <li><a href="https://nalsa.gov.in/womens-assistance/" target="_blank" rel="noopener noreferrer">NALSA Free Legal Aid ↗</a></li>
+          <li><a href="https://www.wcd.gov.in/" target="_blank" rel="noopener noreferrer">Ministry of Women & Child Dev ↗</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <div>&copy; 2026 SheShield. Dedicated to Women's Safety, Privacy & Rights in India.</div>
+      <div>Built with Privacy-First Architecture • End-to-End User Control</div>
+    </div>
+  </footer>
+
+  <!-- Core JavaScript -->
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

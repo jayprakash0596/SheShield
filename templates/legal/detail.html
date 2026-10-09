@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ resource.title_en }} — SheShield Legal Rights{% endblock %}
+
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+
+  <div style="margin-bottom: 20px;">
+    <a href="{{ url_for('legal.index', lang=lang) }}" class="btn btn-outline btn-sm">
+      &larr; Back to Legal Rights Library
+    </a>
+  </div>
+
+  <article class="card">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+      <div>
+        <span class="badge badge-teal" style="margin-bottom: 8px;">{{ resource.category.replace('_', ' ') }}</span>
+        <h1 style="font-size: 1.8rem; color: var(--color-primary-navy); margin-bottom: 4px;">
+          {% if lang == 'hi' %}{{ resource.title_hi }}{% else %}{{ resource.title_en }}{% endif %}
+        </h1>
+        <h2 style="font-size: 1.1rem; color: var(--text-muted); font-weight: 500;">
+          {% if lang == 'hi' %}{{ resource.title_en }}{% else %}{{ resource.title_hi }}{% endif %}
+        </h2>
+      </div>
+      <div style="text-align: right; font-size: 0.8rem; color: var(--text-muted);">
+        Verified & Reviewed: {{ resource.last_reviewed_at.strftime('%d %B %Y') }}
+      </div>
+    </div>
+
+    <!-- Statutory Provisions Box -->
+    {% if resource.legal_sections %}
+      <div style="background: var(--color-purple-light); border-left: 4px solid var(--color-purple); padding: 12px 16px; border-radius: var(--radius-sm); margin-bottom: 20px;">
+        <strong style="color: var(--color-purple);">Key Statute / Act:</strong>
+        <span style="color: var(--color-primary-navy); font-weight: 600; margin-left: 6px;">{{ resource.legal_sections }}</span>
+      </div>
+    {% endif %}
+
+    <!-- Who is Covered / Applicability -->
+    {% if resource.applicability %}
+      <div style="margin-bottom: 20px;">
+        <h3 style="font-size: 1.1rem; color: var(--color-primary-navy); margin-bottom: 6px;">Scope & Applicability (पात्रता व दायरा)</h3>
+        <p style="color: #334155; line-height: 1.6; font-size: 0.95rem;">
+          {{ resource.applicability }}
+        </p>
+      </div>
+    {% endif %}
+
+    <!-- Summary / Legal Meaning -->
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 1.1rem; color: var(--color-primary-navy); margin-bottom: 8px;">What the Law Says / कानून का प्रावधान</h3>
+      <p style="color: #1e293b; line-height: 1.7; font-size: 1rem; margin-bottom: 12px;">
+        {% if lang == 'hi' %}{{ resource.summary_hi }}{% else %}{{ resource.summary_en }}{% endif %}
+      </p>
+      <div style="background: #f8fafc; padding: 12px; border-radius: var(--radius-md); font-size: 0.9rem; color: #475569;">
+        <strong>Parallel Translation:</strong><br>
+        {% if lang == 'hi' %}{{ resource.summary_en }}{% else %}{{ resource.summary_hi }}{% endif %}
+      </div>
+    </div>
+
+    <!-- Action Steps -->
+    <div style="margin-bottom: 24px; background: #f0fdfa; border: 1px solid #99f6e4; padding: 16px; border-radius: var(--radius-md);">
+      <h3 style="font-size: 1.1rem; color: var(--color-teal-hover); margin-bottom: 8px;">
+        Practical Action Steps / क्या कदम उठाएं?
+      </h3>
+      <p style="color: #134e4a; font-size: 0.95rem; line-height: 1.6;">
+        {% if lang == 'hi' %}
+          {{ resource.action_steps_hi or resource.action_steps_en }}
+        {% else %}
+          {{ resource.action_steps_en or resource.action_steps_hi }}
+        {% endif %}
+      </p>
+    </div>
+
+    <!-- Government Portal Links & Disclaimer -->
+    <div style="border-top: 1px solid var(--border-color); padding-top: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      {% if resource.source_url %}
+        <a href="{{ resource.source_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+          Visit Official Portal / स्रोत देखें ↗
+        </a>
+      {% endif %}
+
+      <a href="{{ url_for('complaints.new', category=resource.category) }}" class="btn btn-outline btn-sm">
+        Draft a Complaint for this Issue &rarr;
+      </a>
+    </div>
+  </article>
+
+</div>
+{% endblock %}
