@@ -1,18 +1,23 @@
-<<<<<<< HEAD
 # SheShield (शीशील्ड) 🛡️
 ### Full-Stack Women's Safety, Legal Rights & Emergency Support Platform (India)
 
 SheShield ek privacy-focused, accessible aur full-stack web platform hai jo India mein women aur girls ke liye banaya gaya hai. Yeh application emergency safety assistance, bilingual legal awareness (हिंदी व English), guided complaint drafting, official government portal routing, aur community hazard mapping provide karta hai.
 
+> 📖 **Comprehensive Technical & Architecture Docs:** Detailed database schemas, API specs, and workflow diagrams are documented in [DOCUMENTATION.md](file:///e:/shild/DOCUMENTATION.md).
+
 ---
 
 ## 🌟 Key Features (मुख्य विशेषताएं)
 
-1. **🚨 Emergency SOS & Trusted Contacts:**
+1. **🚨 Emergency SOS, Evidence Capture & Trusted Contacts:**
    - One-touch emergency trigger explicit consent ke sath.
+   - **📸 Automatic Camera Snapshot:** Background emergency camera snapshot capture aur encrypted storage (`EmergencyEvidence`).
+   - **🎙️ 8-Second Ambient Voice Recording:** Aas-pass ka voice/ambient audio recording MediaRecorder API ke through automatic capture aur upload.
+   - **🛡️ Evidence Vault:** In-browser audio player aur photo gallery with tap-to-expand and download capabilities.
+   - **📱 Trusted Contact Live Portal (`/sos/track/<token>`):** Unguessable 32-character capability token link through which family/police can view live GPS and listen to audio evidence without login.
+   - **📨 Carrier SMS Integration:** Real Twilio SMS delivery (+91 E.164 normalization) with automatic fallback to safe local Mock mode.
    - GPS coordinate capture aur dynamic breadcrumb updates.
    - Pre-configured trusted contacts management (Primary contact, SMS notification preferences).
-   - Safe **MOCK Mode** local development ke liye — koi false network SMS dispatch nahi hota.
    - Emergency resolution & false alarm cancellation flow.
    - Direct helpline shortcuts: **112 (National Emergency), 1091 (Women Helpline), 181 (Women in Distress), 1098 (Childline), 1930 (Cyber Fraud)**.
 
@@ -229,6 +234,4 @@ SheShield uses standard **OpenStreetMap (OSM)** tiles via Leaflet without requir
 
 ## 📄 License & Disclaimer
 SheShield is provided for informational and emergency educational purposes. For immediate physical threats or emergencies, users must always contact official state authorities by dialing **112**.
-=======
-# SheShield
->>>>>>> 7e0a2e8b7d22e4e66568a51a0b2a9e2f36b83dbd
+

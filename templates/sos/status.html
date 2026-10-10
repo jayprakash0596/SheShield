@@ -129,11 +129,20 @@
         <span class="badge badge-purple">Mode: {{ sms_provider|upper }}</span>
       </div>
       {% if event.status == 'ACTIVE' %}
-        <form method="POST" action="{{ url_for('sos.resend_alert', token=event.token) }}" style="margin: 0;">
-          <button type="submit" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
-            📨 Resend SMS Alert
-          </button>
-        </form>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <form method="POST" action="{{ url_for('sos.resend_alert', token=event.token) }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
+              📨 Resend SMS Alert
+            </button>
+          </form>
+          <form method="POST" action="{{ url_for('sos.trigger_call', token=event.token) }}" style="margin: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-sm btn-outline" style="display: inline-flex; align-items: center; gap: 6px; color: #b91c1c; border-color: #fca5a5;">
+              📞 Trigger Voice Call Alert
+            </button>
+          </form>
+        </div>
       {% endif %}
     </div>
 

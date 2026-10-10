@@ -85,7 +85,7 @@ def trigger():
     if user_id:
         contacts = TrustedContact.query.filter_by(user_id=user_id, notify_sms=True).all()
         for c in contacts:
-            attempt = notification_service.send_sos_alert(sos_event, c)
+            attempt = notification_service.send_sos_alert(sos_event, c, place_voice_call=True)
             notification_results.append({
                 "name": c.name,
                 "phone": c.phone_number,
@@ -327,6 +327,41 @@ def resend_alert(token):
 
     flash(f"Emergency alert re-dispatched to {dispatched} contact(s) via {notification_service.provider.upper()}.", "success")
     return redirect(url_for("sos.status", token=token))
+
+
+@sos_bp.route("/trigger-call/<token>", methods=["POST"])
+def trigger_call(token):
+    """Manually dispatch emergency automated phone calls to trusted contacts."""
+    sos_event = SOSEvent.query.filter_by(token=token).first_or_404()
+
+    if sos_event.user_id:
+        if not session.get("user_id"):
+            flash("Please sign in to manage this emergency event.", "warning")
+            return redirect(url_for("auth.login", next=request.path))
+        if session.get("user_id") != sos_event.user_id and not session.get("is_admin"):
+            abort(403)
+
+    if sos_event.status != "ACTIVE":
+        flash("This SOS event is already resolved or cancelled.", "warning")
+        return redirect(url_for("sos.status", token=token))
+
+    dispatched = 0
+    if sos_event.user_id:
+        contacts = TrustedContact.query.filter_by(user_id=sos_event.user_id).all()
+        for c in contacts:
+            notification_service.make_emergency_call(sos_event, c)
+            dispatched += 1
+    else:
+        class DemoContact:
+            id = None
+            name = "Demo Contact"
+            phone_number = "9999999999"
+        notification_service.make_emergency_call(sos_event, DemoContact())
+        dispatched += 1
+
+    flash(f"Emergency automated phone call placed to {dispatched} contact(s).", "info")
+    return redirect(url_for("sos.status", token=token))
+
 
 
 @sos_bp.route("/update-location/<token>", methods=["POST"])
